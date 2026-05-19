@@ -1,0 +1,101 @@
+* {
+    bg: rgba(23, 23, 56, 0.82);
+    fg: #F5F7FA;
+    muted: #D8DEE9;
+    accent: #67C7E8;
+    accent2: #B46CFF;
+    danger: #C83A36;
+    background-color: transparent;
+    text-color: @fg;
+}
+
+window {
+    transparency: "real";
+    background-color: @bg;
+    border: 1px;
+    border-color: rgba(245, 247, 250, 0.16);
+    border-radius: 18px;
+    padding: 12px;
+}
+
+mainbox {
+    children: [ inputbar, listview ];
+}
+
+inputbar {
+    children: [ prompt, entry ];
+    background-color: rgba(245, 247, 250, 0.08);
+    border-radius: 12px;
+    padding: 8px 12px;
+    margin: 0 0 8px 0;
+}
+
+prompt {
+    text-color: @accent;
+    margin: 0 8px 0 0;
+}
+
+entry {
+    placeholder: "Search...";
+    placeholder-color: @muted;
+}
+
+listview {
+    lines: 8;
+    columns: 1;
+    spacing: 4px;
+    fixed-height: 360px;
+}
+
+element {
+    padding: 8px 12px;
+    border-radius: 10px;
+}
+
+element normal.normal {
+    background-color: transparent;
+    text-color: @fg;
+}
+
+element normal.urgent {
+    background-color: rgba(200, 58, 54, 0.35);
+    text-color: @fg;
+}
+
+element normal.active {
+    background-color: rgba(103, 199, 232, 0.15);
+    text-color: @accent;
+}
+
+element selected.normal {
+    background: linear-gradient(135deg, rgba(103, 199, 232, 0.35), rgba(180, 108, 255, 0.35));
+    text-color: @fg;
+}
+
+element selected.urgent {
+    background-color: @danger;
+    text-color: @fg;
+}
+
+element selected.active {
+    background: linear-gradient(135deg, rgba(103, 199, 232, 0.45), rgba(180, 108, 255, 0.45));
+    text-color: @fg;
+}
+
+element-icon {
+    size: 24px;
+}
+
+element-text {
+    vertical-align: 0.5;
+}
+
+message {
+    background-color: rgba(245, 247, 250, 0.08);
+    border-radius: 12px;
+    padding: 8px;
+}
+
+textbox {
+    text-color: @fg;
+}
