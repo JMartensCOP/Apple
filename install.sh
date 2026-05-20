@@ -169,15 +169,23 @@ install_osk_optional() {
     return 0
   fi
 
+  if command -v onboard >/dev/null 2>&1; then
+    echo "Schermtoetsenbord: onboard (pacman-fallback) gevonden — Waybar 󰌌 werkt."
+    echo "  Voor Wayland-OSK: yay -S wvkbd-deskintl"
+    return 0
+  fi
+
   echo ""
   echo "=== Schermtoetsenbord (wvkbd) ==="
   echo "wvkbd staat niet in de officiële Arch-repositories (alleen AUR)."
+  echo "Fallback onboard wordt door install.sh uit pacman geïnstalleerd."
   echo "Geen systemd-service — start via Waybar 󰌌 of:"
   echo "  bash \"$PROJECT_DIR/scripts/toggle-osk.sh\""
   echo ""
   echo "Installeer handmatig met yay/paru (één layout volstaat):"
   echo "  yay -S wvkbd-deskintl    # aanbevolen op vouw-/touchscherm"
   echo "  yay -S wvkbd             # mobintl layout"
+  echo "Diagnose: bash \"$PROJECT_DIR/scripts/diagnose-convertible.sh\""
 }
 
 enable_audio_services() {
@@ -219,6 +227,29 @@ enable_network_services() {
 
   if [ ! -f "$script" ]; then
     echo "NetworkManager: $script ontbreekt; overgeslagen."
+    return 0
+  fi
+
+  chmod +x "$script" 2>/dev/null || true
+  bash "$script" -y
+}
+
+enable_bluetooth_services() {
+  local script="$PROJECT_DIR/scripts/enable-bluetooth.sh"
+
+  if is_windows_shell; then
+    echo "Bluetooth: overgeslagen (Windows/Git Bash)."
+    echo "  Op Linux: bash \"$script\""
+    return 0
+  fi
+
+  if ! is_linux; then
+    echo "Bluetooth: overgeslagen (geen Linux)."
+    return 0
+  fi
+
+  if [ ! -f "$script" ]; then
+    echo "Bluetooth: $script ontbreekt; overgeslagen."
     return 0
   fi
 
@@ -290,6 +321,7 @@ ARCH_PACKAGES=(
   wireless-regdb
   linux-firmware
   bluez
+  bluez-utils
   blueman
   upower
   dolphin
@@ -298,6 +330,8 @@ ARCH_PACKAGES=(
   ttf-jetbrains-mono-nerd
   inter-font
   wlr-randr
+  jq
+  onboard
 )
 
 resolve_config_dir
@@ -322,6 +356,7 @@ install_dependencies
 install_osk_optional
 enable_audio_services
 enable_network_services
+enable_bluetooth_services
 verify_hyprland_session_desktop
 
 mkdir -p "$BACKUP_DIR"
@@ -410,3 +445,9 @@ echo "  Log uit en opnieuw in op tty1, of: reboot"
 echo ""
 echo "WiFi / NetworkManager:"
 echo "  $CONFIG_DIR/big-sur/scripts/enable-network.sh"
+echo ""
+echo "Bluetooth / BlueZ:"
+echo "  $CONFIG_DIR/big-sur/scripts/enable-bluetooth.sh"
+echo ""
+echo "Vouw-laptop (OSK / rotatie):"
+echo "  bash \"$CONFIG_DIR/big-sur/scripts/diagnose-convertible.sh\""

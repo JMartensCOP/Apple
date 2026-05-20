@@ -94,6 +94,14 @@ for component in hypr waybar kitty rofi dunst; do
   fi
 done
 
+# Waybar-knoppen roepen ~/.config/big-sur/scripts/*.sh aan — altijd uit project kopiëren
+if [ -d "$PROJECT_DIR/scripts" ]; then
+  mkdir -p "$TARGET_CONFIG/big-sur/scripts"
+  cp -a "$PROJECT_DIR/scripts/"*.sh "$TARGET_CONFIG/big-sur/scripts/"
+  chmod +x "$TARGET_CONFIG/big-sur/scripts/"*.sh
+  echo "  gekopieerd: big-sur/scripts/ (uit project)"
+fi
+
 # Fallback: install fresh from project if hyprland.conf still missing
 if [ ! -f "$TARGET_CONFIG/hypr/hyprland.conf" ] && [ -f "$PROJECT_DIR/install.sh" ]; then
   echo ""

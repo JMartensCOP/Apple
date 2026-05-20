@@ -162,9 +162,12 @@ big-sur-hyprland-theme/
     ├── reload-theme.sh
     ├── toggle-osk.sh
     ├── rotate-display.sh
+    ├── diagnose-convertible.sh
     ├── backup-configs.sh
     ├── enable-audio.sh
     ├── enable-network.sh
+    ├── enable-bluetooth.sh
+    ├── open-bluetooth.sh
     ├── enable-graphical-login.sh
     ├── fix-audio.sh
     └── sync-to-linux-home.sh
@@ -276,7 +279,7 @@ Rechts vóór de status-pill: `group/quick` met klikbare custom-modules:
 | `custom/restart` | 󰑐 | Rechts | `restart-computer.sh` — bevestiging (rofi/wofi) en `loginctl reboot` |
 | `custom/audio` | 󰓃 | Links | `pavucontrol` |
 | `custom/wifi` | 󰖩 | Links | `nm-connection-editor` |
-| `custom/bluetooth` | 󰂯 | Links | `blueman-manager` |
+| `custom/bluetooth` | 󰂯 | Links | `open-bluetooth.sh` → blueman-manager of bluetoothctl |
 
 `install.sh` kopieert alle scripts naar `~/.config/big-sur/scripts/`. Bij handmatige installatie: zelfde map aanmaken en `scripts/*.sh` daarheen kopiëren (`chmod +x`).
 
@@ -435,6 +438,7 @@ iw
 wireless-regdb
 linux-firmware
 bluez
+bluez-utils
 blueman
 upower
 dolphin
@@ -445,7 +449,7 @@ inter-font
 wlr-randr
 ```
 
-**Schermtoetsenbord (wvkbd):** staat **niet** in de officiële Arch-repositories — alleen [AUR](https://aur.archlinux.org/packages/wvkbd). Er is **geen** systemd user-service; start via Waybar 󰌌 of `toggle-osk.sh`.
+**Schermtoetsenbord (wvkbd):** staat **niet** in de officiële Arch-repositories — alleen [AUR](https://aur.archlinux.org/packages/wvkbd). Fallback **onboard** via `pacman` (in `install.sh`). Geen systemd-service; start via Waybar 󰌌 of `toggle-osk.sh`.
 
 ```bash
 yay -S wvkbd-deskintl    # aanbevolen op vouw-/touchscherm (HP EliteBook x360)
@@ -456,7 +460,7 @@ yay -S wvkbd             # mobintl layout → binary wvkbd-mobintl
 Voor Arch (officiële repos):
 
 ```bash
-sudo pacman -S hyprland waybar kitty hyprpaper rofi-wayland dunst wl-clipboard grim slurp brightnessctl playerctl pavucontrol pipewire pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-firmware sof-firmware networkmanager network-manager-applet iw wireless-regdb linux-firmware bluez blueman upower dolphin firefox code ttf-jetbrains-mono-nerd inter-font wlr-randr
+sudo pacman -S hyprland waybar kitty hyprpaper rofi-wayland dunst wl-clipboard grim slurp brightnessctl playerctl pavucontrol pipewire pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-firmware sof-firmware networkmanager network-manager-applet iw wireless-regdb linux-firmware bluez bluez-utils blueman upower dolphin firefox code ttf-jetbrains-mono-nerd inter-font wlr-randr jq onboard
 ```
 
 **Audio (Arch):** gebruik **PipeWire** met `pipewire-pulse` (PulseAudio-compatibiliteit voor Waybar `pulseaudio`-module en `pavucontrol`). Het legacy `pulseaudio`-pakket is niet nodig. Voor Intel-laptops (bijv. HP EliteBook) installeert `install.sh` ook `alsa-firmware`, `sof-firmware` en `alsa-utils`. `install.sh` schakelt de officiële user-units in via `scripts/enable-audio.sh` en probeert laptop-speakers als standaard uitgang via `scripts/fix-audio.sh --auto`:
@@ -468,6 +472,8 @@ wireplumber.service
 ```
 
 Op Windows/Git Bash worden pakketten en systemd overgeslagen; voer `./install.sh` opnieuw uit in je Hyprland-sessie op Linux.
+
+**Bluetooth (Arch):** `bluez` levert `bluetoothd`; `bluez-utils` levert `bluetoothctl`; `blueman` is de GUI. `install.sh` schakelt de stack in via `scripts/enable-bluetooth.sh` (`systemctl enable --now bluetooth`, `rfkill unblock bluetooth`, adapter aan).
 
 Firefox staat in de officiële Arch-repositories (`firefox`). Visual Studio Code heet op Arch **`code`** (open-source build in `extra`; volledige Visual Studio IDE is alleen Windows/macOS). `install.sh` installeert beide samen met de overige pakketten. Waybar en **Super+Shift+C** starten VS Code via `scripts/launch-code.sh` (fallback: `code-oss`, `codium`). Voor een andere browser pas je `$browser` in `hypr/keybinds.conf` en `custom/browser` in `waybar/config.jsonc` aan. Voor een andere editor pas je `$editor`, `launch-code.sh` en `custom/code` aan.
 
@@ -650,7 +656,7 @@ binde = , XF86MonBrightnessUp, exec, brightnessctl set +5%
 binde = , XF86MonBrightnessDown, exec, brightnessctl set 5%-
 
 # Convertible: schermrotatie (zelfde script als Waybar-knop)
-bind = $mainMod SHIFT, R, exec, bash "$HOME/.config/big-sur/scripts/rotate-display.sh"
+bind = $mainMod SHIFT, R, exec, /usr/bin/bash "$HOME/.config/big-sur/scripts/rotate-display.sh"
 ```
 
 Cursor moet deze keybinds splitsen naar `hypr/keybinds.conf` en vanuit `hyprland.conf` sourcen.
@@ -838,7 +844,7 @@ Schakelt een **Wayland-schermtoetsenbord** in/uit. Voorkeur: **wvkbd** (`wvkbd-d
 bash ~/.config/big-sur/scripts/toggle-osk.sh
 ```
 
-Arch: installeer via AUR (`yay -S wvkbd-deskintl`). `install.sh` print AUR-instructies; het pakket zit niet in `pacman -S`.
+Arch: installeer via AUR (`yay -S wvkbd-deskintl`). `install.sh` installeert **onboard** uit pacman als fallback. Diagnose: `scripts/diagnose-convertible.sh`.
 
 ### `scripts/rotate-display.sh`
 
@@ -848,7 +854,11 @@ Roteert het **primaire paneel** (meestal `eDP-1` op laptops) in stappen **0° �
 hyprctl keyword monitor <naam>,transform,<0-3>
 ```
 
-Waybar-knop `custom/rotate` (󰍹) en sneltoets **Super+Shift+R**. Status wordt bewaard in `~/.cache/big-sur/display-rotation`. Als `hyprctl` niet beschikbaar is, valt het script terug op `wlr-randr --transform`.
+Waybar-knop `custom/rotate` (󰍹) en sneltoets **Super+Shift+R**. Status wordt bewaard in `~/.cache/big-sur/display-rotation`. Hyprland 0.54+: `hyprctl keyword monitor <naam>,transform,<0-3>` met fallback naar volledige monitor-regel; bij fouten `notify-send`. Als `hyprctl` niet beschikbaar is, valt het script terug op `wlr-randr --transform`.
+
+### `scripts/diagnose-convertible.sh`
+
+Optionele checklist voor vouw-laptops (HP EliteBook x360): scripts aanwezig/uitvoerbaar, Waybar-paden, wvkbd/onboard, `hyprctl monitors`, waarschuwing voor kanshi/shikane.
 
 Handmatig:
 
@@ -880,6 +890,24 @@ bash ~/.config/big-sur/scripts/enable-network.sh --connect "JouwSSID"
 ```
 
 Wordt automatisch aangeroepen door `install.sh` op Linux.
+
+### `scripts/enable-bluetooth.sh`
+
+Schakelt **bluetooth.service** in (BlueZ), deblokkeert Bluetooth via `rfkill`, zet de adapter aan (`bluetoothctl power on`), toont status. Waybar 󰂯 opent `open-bluetooth.sh`.
+
+```bash
+bash ~/.config/big-sur/scripts/enable-bluetooth.sh
+```
+
+Wordt automatisch aangeroepen door `install.sh` op Linux (`-y`).
+
+### `scripts/open-bluetooth.sh`
+
+Opent **blueman-manager** als dat geïnstalleerd is; anders **bluetoothctl** in kitty/foot/alacritty.
+
+```bash
+bash ~/.config/big-sur/scripts/open-bluetooth.sh
+```
 
 ### `scripts/start-hyprland.sh`
 
@@ -1045,6 +1073,53 @@ dmesg | grep -i iwl | tail
 | Alleen ethernet werkt | Controleer BIOS: wireless enabled; kernel ≥ recent met iwlwifi |
 
 **Waybar:** quick-bar icoon 󰖩 → `nm-connection-editor`. Status-icoon 󰤨 (`network`-module) toont signaal wanneer verbonden.
+
+### Bluetooth / BlueZ werkt niet (Hyprland / HP EliteBook x360)
+
+**Symptoom:** Bluetooth-icoon in Waybar (󰂯) opent niets, geen apparaten zichtbaar, of `bluetoothctl` meldt `Powered: no`.
+
+**Oorzaak:** `bluetooth.service` niet ingeschakeld, adapter software-geblokkeerd (`rfkill`), of ontbrekende pakketten (`bluez`, `bluez-utils`, `blueman`).
+
+**Snel herstel:**
+
+```bash
+cd /pad/naar/big-sur-hyprland-theme
+chmod +x scripts/enable-bluetooth.sh scripts/open-bluetooth.sh
+./scripts/enable-bluetooth.sh
+# of via install (pakketten + service):
+./install.sh -y
+```
+
+**Pakketten** (zitten in `install.sh` / `ARCH_PACKAGES`):
+
+```bash
+sudo pacman -S --needed bluez bluez-utils blueman
+sudo systemctl enable --now bluetooth
+rfkill unblock bluetooth
+bluetoothctl power on
+```
+
+**Diagnose:**
+
+```bash
+systemctl status bluetooth
+rfkill list
+bluetoothctl show
+bluetoothctl devices
+dmesg | grep -i bluetooth | tail
+```
+
+| Probleem | Oplossing |
+|----------|-----------|
+| `bluetoothctl: command not found` | `sudo pacman -S bluez bluez-utils` |
+| `Powered: no` | `bluetoothctl power on` of `./scripts/enable-bluetooth.sh` |
+| Bluetooth soft-blocked (HP laptop) | `rfkill unblock bluetooth` — script doet dit automatisch |
+| `bluetooth.service` inactive | `sudo systemctl enable --now bluetooth` |
+| Waybar 󰂯 doet niets | `./install.sh` op Linux; knop roept `open-bluetooth.sh` aan (blueman of bluetoothctl) |
+| Geen GUI, alleen CLI | `sudo pacman -S blueman` of `bluetoothctl` in terminal |
+| Permissie / pairing | Optioneel: `sudo usermod -aG bluetooth "$USER"` en opnieuw inloggen |
+
+**Waybar:** quick-bar icoon 󰂯 → `~/.config/big-sur/scripts/open-bluetooth.sh` (Blueman-manager, anders `bluetoothctl` in kitty).
 
 ### Visual Studio Code start niet (Waybar 󰨞 / Super+Shift+C)
 
@@ -1283,7 +1358,7 @@ Dit thema werkt op een **HP EliteBook x360** (2-in-1 business-laptop) zonder spe
 |-----------|-------------------|--------------|
 | Grafiek | Meestal **Intel** (geen NVIDIA-driver-gedoe) | Geen GPU-specifieke config nodig |
 | WiFi | Vaak **Intel** (`iwlwifi`); soms Realtek op oudere modellen | NetworkManager + `enable-network.sh`; Waybar wifi-knop → `nm-connection-editor` |
-| Bluetooth | Standaard met **BlueZ** | `bluez` + `blueman` + Waybar bluetooth-knop |
+| Bluetooth | Vaak **Intel**; rfkill-blok op HP | `bluez` + `bluez-utils` + `blueman` + `enable-bluetooth.sh`; Waybar 󰂯 → `open-bluetooth.sh` |
 | Batterij | Eén interne batterij (`BAT0`); zelden twee | Waybar `battery` met `"bat": "BAT0"` + pakket **upower** |
 | Touchpad | Werkt via Hyprland `input { touchpad { ... } }` | `natural_scroll`, `tap-to-click` in `hypr/hyprland.conf` |
 | Touchscreen | Vaak Wacom/ELAN; werkt vaak out-of-the-box als pointer | Geen aparte tablet-modus in Hyprland-config |
@@ -1301,7 +1376,9 @@ Dit thema werkt op een **HP EliteBook x360** (2-in-1 business-laptop) zonder spe
 
 3. **WiFi werkt niet / icoon blijft los** — `./scripts/enable-network.sh`; firmware `linux-firmware`; geen iwd+NM tegelijk. Waybar 󰖩 → `nm-connection-editor` (alleen als NetworkManager actief is).
 
-3b. **VS Code start niet (󰨞 / Super+Shift+C)** — Installeer `code` (`sudo pacman -S code`) of test `bash ~/.config/big-sur/scripts/launch-code.sh`. Zie [Visual Studio Code start niet](#visual-studio-code-start-niet-waybar--supershiftc).
+3b. **Bluetooth werkt niet** — `./scripts/enable-bluetooth.sh`; `rfkill unblock bluetooth`; `bluetoothctl power on`. Waybar 󰂯 → `open-bluetooth.sh`. Zie [Bluetooth / BlueZ werkt niet](#bluetooth--bluez-werkt-niet-hyprland--hp-elitebook-x360).
+
+3c. **VS Code start niet (󰨞 / Super+Shift+C)** — Installeer `code` (`sudo pacman -S code`) of test `bash ~/.config/big-sur/scripts/launch-code.sh`. Zie [Visual Studio Code start niet](#visual-studio-code-start-niet-waybar--supershiftc).
 
 4. **Boot vraagt terminal-login vóór desktop** — `./install.sh` op Linux (autostart via `setup-bash-profile.sh`). SDDM uit? `sudo systemctl disable --now sddm.service`. Zie [Geen terminal bij opstarten](#geen-terminal-bij-opstarten).
 
@@ -1309,7 +1386,8 @@ Dit thema werkt op een **HP EliteBook x360** (2-in-1 business-laptop) zonder spe
 
 6. **Verticaal / tablet-modus (vouw-laptop)** — Na `./install.sh` op Linux:
    - **Rotatie:** klik 󰍹 in Waybar of druk **Super+Shift+R** (elke druk: 0° → 90° → 180° → 270°). Script: `~/.config/big-sur/scripts/rotate-display.sh`. Vereist Hyprland (`hyprctl keyword monitor eDP-1,transform,<0-3>`) of fallback `wlr-randr`.
-   - **Schermtoetsenbord:** klik 󰌌 in Waybar → `toggle-osk.sh` (wvkbd). Installeer eerst via AUR: `yay -S wvkbd-deskintl` (vouw-/touchscherm) of `yay -S wvkbd` (mobintl). Geen `systemctl enable wvkbd`.
+   - **Schermtoetsenbord:** klik 󰌌 in Waybar → `toggle-osk.sh` (wvkbd of onboard-fallback). AUR: `yay -S wvkbd-deskintl`; of `sudo pacman -S onboard` / `./install.sh -y`. Geen `systemctl enable wvkbd`.
+   - **Werkt niets:** `bash ~/.config/big-sur/scripts/diagnose-convertible.sh` — zie [Schermtoetsenbord / rotatie werkt niet](#schermtoetsenbord--rotatie-werkt-niet-waybar---).
    - Draai je fysiek het scherm zonder knop: er is **geen** automatische rotatie; gebruik de Waybar-knop of sneltoets.
    - Werkt rotatie niet terwijl `hyprctl` “ok” zegt: controleer of **kanshi/shikane** niet tegelijk je monitors beheert (die overschrijven `hyprctl keyword`). Zie [Hyprland monitors](https://wiki.hypr.land/Configuring/Monitors/).
 
@@ -1321,15 +1399,56 @@ Dit thema werkt op een **HP EliteBook x360** (2-in-1 business-laptop) zonder spe
 ls /sys/class/power_supply/
 upower -e | grep -i bat
 nmcli -t -f ACTIVE,SSID dev wifi
+bash ~/.config/big-sur/scripts/enable-bluetooth.sh
 bluetoothctl show
 hyprctl devices
 hyprctl monitors | grep -E '^Monitor|transform'
+bash ~/.config/big-sur/scripts/diagnose-convertible.sh
 bash ~/.config/big-sur/scripts/rotate-display.sh
 bash ~/.config/big-sur/scripts/toggle-osk.sh
 ~/.config/big-sur/scripts/start-waybar.sh
 ```
 
 Na wijzigingen aan `waybar/config.jsonc`: `pkill waybar && ~/.config/big-sur/scripts/start-waybar.sh`.
+
+### Schermtoetsenbord / rotatie werkt niet (Waybar 󰌌 / 󰍹)
+
+**Symptoom:** Klik op het toetsenbord- of rotatie-icoon in Waybar doet niets; **Super+Shift+R** roteert niet; geen melding of OSK verschijnt niet.
+
+**Veelvoorkomende oorzaken:**
+
+| Oorzaak | Oplossing |
+|---------|-----------|
+| Scripts staan niet in Linux `~/.config` | Alleen `./install.sh` **in Hyprland** (niet alleen configs vanaf Windows kopiëren). Na `sync-to-linux-home.sh` worden scripts nu ook gekopieerd — anders ontbreken `toggle-osk.sh` / `rotate-display.sh`. |
+| Scripts niet uitvoerbaar | `chmod +x ~/.config/big-sur/scripts/*.sh` of opnieuw `./install.sh -y` |
+| `wvkbd` niet geïnstalleerd | AUR: `yay -S wvkbd-deskintl`. Fallback: `sudo pacman -S onboard` (wordt door `install.sh` meegeïnstalleerd). |
+| Rotatie: `hyprctl` zegt ok maar scherm draait niet | Externe monitor-daemon (**kanshi** / **shikane**) overschrijft Hyprland — uitschakelen of rotatie daar configureren. |
+| Rotatie: verkeerde monitor | Script kiest `eDP-*` automatisch; controleer met `hyprctl monitors`. |
+
+**Diagnose (op de laptop, in Hyprland-terminal):**
+
+```bash
+cd ~/Pictures/Apple   # of je clone-pad
+./install.sh -y       # scripts + configs naar ~/.config
+bash ~/.config/big-sur/scripts/diagnose-convertible.sh
+```
+
+**Handmatig testen:**
+
+```bash
+bash ~/.config/big-sur/scripts/toggle-osk.sh
+bash ~/.config/big-sur/scripts/rotate-display.sh
+hyprctl monitors | grep -E '^Monitor|transform'
+```
+
+**Waybar herladen na config-wijziging:**
+
+```bash
+pkill waybar
+~/.config/big-sur/scripts/start-waybar.sh
+```
+
+Waybar gebruikt expliciet: `/usr/bin/bash "$HOME/.config/big-sur/scripts/toggle-osk.sh"` en hetzelfde voor `rotate-display.sh`.
 
 ### Schermtoetsenbord: `error target not found wvkbd`
 

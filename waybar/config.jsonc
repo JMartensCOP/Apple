@@ -82,14 +82,14 @@
     "format": "󰌌",
     "tooltip": true,
     "tooltip-format": "Schermtoetsenbord (wvkbd)\nKlik: aan/uit",
-    "on-click": "bash \"$HOME/.config/big-sur/scripts/toggle-osk.sh\""
+    "on-click": "/usr/bin/bash \"$HOME/.config/big-sur/scripts/toggle-osk.sh\""
   },
 
   "custom/rotate": {
     "format": "󰍹",
     "tooltip": true,
     "tooltip-format": "Schermrotatie — 0° → 90° → 180° → 270°\nSuper+Shift+R",
-    "on-click": "bash \"$HOME/.config/big-sur/scripts/rotate-display.sh\""
+    "on-click": "/usr/bin/bash \"$HOME/.config/big-sur/scripts/rotate-display.sh\""
   },
 
   "custom/restart": {
@@ -118,7 +118,7 @@
     "format": "󰂯",
     "tooltip": true,
     "tooltip-format": "Bluetooth devices",
-    "on-click": "blueman-manager"
+    "on-click": "bash \"$HOME/.config/big-sur/scripts/open-bluetooth.sh\""
   },
 
   "group/status": {

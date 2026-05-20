@@ -1,10 +1,15 @@
 #!/usr/bin/env bash
 # Cycle primary display rotation: 0° → 90° → 180° → 270° (Hyprland transform 0–3)
-set -euo pipefail
+set -uo pipefail
 
 STATE_DIR="${XDG_STATE_HOME:-$HOME/.cache}/big-sur"
 STATE_FILE="$STATE_DIR/display-rotation"
 mkdir -p "$STATE_DIR"
+
+notify_err() {
+  notify-send "Schermrotatie" "$1" 2>/dev/null || true
+  echo "Schermrotatie: $1" >&2
+}
 
 read_state() {
   if [ -f "$STATE_FILE" ]; then
@@ -50,7 +55,7 @@ detect_monitor() {
   fi
 
   if [ -z "$mon" ]; then
-    echo "Geen monitor gevonden (hyprctl / wlr-randr)." >&2
+    notify_err "Geen monitor gevonden (hyprctl / wlr-randr)."
     exit 1
   fi
   echo "$mon"
@@ -71,10 +76,51 @@ current_transform_hypr() {
   '
 }
 
+hyprctl_ok() {
+  local out="$1"
+  [ -n "$out" ] && [[ "$out" != *"error"* ]] && [[ "$out" == *"ok"* ]]
+}
+
+# Hyprland 0.54+: probeer transform-only, dan volledige monitor-regel (regressie-workaround)
 apply_hypr() {
   local mon="$1" transform="$2"
-  # Hyprland 0.54+: hyprctl keyword monitor <naam>,transform,<0-7>
-  hyprctl keyword "monitor ${mon},transform,${transform}"
+  local out scale mode
+
+  out="$(hyprctl keyword "monitor ${mon},transform,${transform}" 2>&1)" || true
+  if hyprctl_ok "$out"; then
+    sleep 0.15
+    if [ "$(current_transform_hypr "$mon" 2>/dev/null || echo -1)" = "$transform" ]; then
+      return 0
+    fi
+  fi
+
+  if command -v jq >/dev/null 2>&1; then
+    scale="$(hyprctl monitors -j 2>/dev/null | jq -r --arg m "$mon" '.[] | select(.name == $m) | .scale // 1')"
+    mode="$(hyprctl monitors -j 2>/dev/null | jq -r --arg m "$mon" '
+      .[] | select(.name == $m) |
+      "\(.width)x\(.height)@\(.refreshRate)Hz"
+    ')"
+    if [ -n "$mode" ] && [ "$mode" != "null" ] && [ -n "$scale" ]; then
+      out="$(hyprctl keyword "monitor ${mon},${mode},0x0,${scale},transform,${transform}" 2>&1)" || true
+      if hyprctl_ok "$out"; then
+        sleep 0.15
+        if [ "$(current_transform_hypr "$mon" 2>/dev/null || echo -1)" = "$transform" ]; then
+          return 0
+        fi
+      fi
+    fi
+  fi
+
+  out="$(hyprctl keyword "monitor ${mon},preferred,auto,1,transform,${transform}" 2>&1)" || true
+  if hyprctl_ok "$out"; then
+    sleep 0.15
+    if [ "$(current_transform_hypr "$mon" 2>/dev/null || echo -1)" = "$transform" ]; then
+      return 0
+    fi
+  fi
+
+  notify_err "Rotatie niet toegepast op ${mon}. Controleer kanshi/shikane of: hyprctl keyword monitor ${mon},transform,${transform}"
+  return 1
 }
 
 # wlr-randr: normal | 90 | 180 | 270
@@ -88,7 +134,11 @@ apply_wlr() {
     3) mode="270" ;;
     *) mode="normal" ;;
   esac
-  wlr-randr --output "$mon" --transform "$mode"
+  if ! wlr-randr --output "$mon" --transform "$mode" 2>/dev/null; then
+    notify_err "wlr-randr mislukt voor ${mon} (${mode})."
+    return 1
+  fi
+  return 0
 }
 
 MONITOR="$(detect_monitor)"
@@ -105,11 +155,15 @@ NEXT=$(( (CURRENT + 1) % 4 ))
 LABELS=("0° (normaal)" "90°" "180°" "270°")
 
 if command -v hyprctl >/dev/null 2>&1; then
-  apply_hypr "$MONITOR" "$NEXT"
+  if ! apply_hypr "$MONITOR" "$NEXT"; then
+    exit 1
+  fi
 elif command -v wlr-randr >/dev/null 2>&1; then
-  apply_wlr "$MONITOR" "$NEXT"
+  if ! apply_wlr "$MONITOR" "$NEXT"; then
+    exit 1
+  fi
 else
-  echo "Installeer Hyprland of wlr-randr voor schermrotatie." >&2
+  notify_err "Installeer Hyprland of wlr-randr (pacman -S hyprland wlr-randr)."
   exit 1
 fi
 
