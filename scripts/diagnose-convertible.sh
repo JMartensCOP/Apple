@@ -74,17 +74,47 @@ fi
 echo ""
 
 echo "--- Schermrotatie ---"
+ROT_STATE="${XDG_STATE_HOME:-$HOME/.cache}/big-sur/display-rotation"
+if [ -f "$ROT_STATE" ]; then
+  echo "  Cache state (~/.cache/big-sur/display-rotation): $(cat "$ROT_STATE" 2>/dev/null)"
+fi
 if command -v hyprctl >/dev/null 2>&1; then
   echo "  hyprctl monitors (naam + transform):"
   hyprctl monitors 2>/dev/null | grep -E '^Monitor |transform:' || hyprctl monitors
   if command -v jq >/dev/null 2>&1; then
-    echo "  JSON (eerste eDP of [0]):"
-    hyprctl monitors -j 2>/dev/null | jq -r '.[] | "\(.name) transform=\(.transform) \(.width)x\(.height)@\(.refreshRate)Hz scale=\(.scale)"' | head -5
+    echo "  JSON (alle monitors):"
+    hyprctl monitors -j 2>/dev/null | jq -r '.[] | "\(.name) transform=\(.transform) \(.width)x\(.height)@\(.refreshRate)Hz scale=\(.scale)"'
   else
     echo "  Tip: sudo pacman -S jq  (betere monitor-detectie in rotate-display.sh)"
   fi
 else
   echo "  hyprctl niet gevonden (geen Hyprland-sessie?)"
+fi
+echo ""
+echo "--- Waybar proces + config ---"
+if pgrep -x waybar >/dev/null 2>&1; then
+  echo "  PID: $(pgrep -x waybar | tr '\n' ' ' | sed 's/ $//')"
+  pgrep -ax waybar 2>/dev/null | sed 's/^/  /' || true
+else
+  echo "  Geen waybar-proces actief."
+fi
+for variant in config.jsonc config.landscape.jsonc config.portrait.jsonc; do
+  p="$CONFIG/waybar/$variant"
+  if [ -f "$p" ]; then
+    echo "  OK  $p"
+  else
+    echo "  ONTBREEKT: $p  (./install.sh -y)"
+  fi
+done
+if [ -f "$WAYBAR_CFG" ]; then
+  if grep -q 'portrait (90° / 270°)' "$WAYBAR_CFG" 2>/dev/null \
+    || grep -q '"margin-top": 12' "$WAYBAR_CFG" 2>/dev/null; then
+    echo "  Actieve config lijkt portrait (margins/config.portrait.jsonc)"
+  elif grep -q 'landscape (0° / 180°)' "$WAYBAR_CFG" 2>/dev/null; then
+    echo "  Actieve config lijkt landscape (config.landscape.jsonc)"
+  else
+    echo "  Actieve config: onbekende variant (vergelijk margins met landscape/portrait templates)"
+  fi
 fi
 if command -v wlr-randr >/dev/null 2>&1; then
   echo "  wlr-randr outputs:"

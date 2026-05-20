@@ -1,12 +1,18 @@
 #!/usr/bin/env bash
 # Cycle primary display rotation: 0° → 90° → 180° → 270° (Hyprland transform 0–3)
-# After transform: restart Waybar so click targets match the bar (Hyprland transform mismatch).
+# After transform: activate landscape/portrait Waybar config + hard restart (hitbox sync).
 set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 STATE_DIR="${XDG_STATE_HOME:-$HOME/.cache}/big-sur"
 STATE_FILE="$STATE_DIR/display-rotation"
-mkdir -p "$STATE_DIR"
+WAYBAR_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/waybar"
+SETTLE_SEC=1.2
+TRANSFORM_WAIT_MAX=25
+
+notify_step() {
+  notify-send "Schermrotatie" "$1" 2>/dev/null || true
+}
 
 notify_err() {
   notify-send "Schermrotatie" "$1" 2>/dev/null || true
@@ -78,6 +84,27 @@ current_transform_hypr() {
   '
 }
 
+# Poll tot Hyprland transform overeenkomt (max ~2.5s)
+wait_for_transform() {
+  local mon="$1" want="$2"
+  local i=0 actual=""
+
+  if ! command -v hyprctl >/dev/null 2>&1; then
+    sleep 0.5
+    return 0
+  fi
+
+  while [ "$i" -lt "$TRANSFORM_WAIT_MAX" ]; do
+    actual="$(current_transform_hypr "$mon" 2>/dev/null || echo "")"
+    if [ "$actual" = "$want" ]; then
+      return 0
+    fi
+    sleep 0.1
+    i=$((i + 1))
+  done
+  return 1
+}
+
 hyprctl_ok() {
   local out="$1"
   [ -n "$out" ] && [[ "$out" != *"error"* ]] && [[ "$out" == *"ok"* ]]
@@ -88,27 +115,124 @@ kanshi_conflict() {
   pgrep -x kanshi >/dev/null 2>&1 || pgrep -x shikane >/dev/null 2>&1
 }
 
-# SIGUSR1/2 "reload" herlaadt config, niet input-regio's na monitor-transform — volledige herstart.
-restart_waybar() {
-  local start_script=""
+waybar_template_dir() {
+  local d=""
+  for d in \
+    "$WAYBAR_DIR" \
+    "$SCRIPT_DIR/../waybar" \
+    "$(cd "$SCRIPT_DIR/.." 2>/dev/null && pwd)/waybar"; do
+    if [ -n "$d" ] && [ -d "$d" ]; then
+      if [ -f "$d/config.landscape.jsonc" ] || [ -f "$d/config.portrait.jsonc" ]; then
+        echo "$d"
+        return 0
+      fi
+    fi
+  done
+  return 1
+}
 
+# Landscape (0/2) vs portrait (1/3) — volledige config.jsonc vervangen
+activate_waybar_config() {
+  local transform="$1"
+  local tpl_dir src active="$WAYBAR_DIR/config.jsonc"
+
+  tpl_dir="$(waybar_template_dir 2>/dev/null || echo "")"
+  if [ -z "$tpl_dir" ]; then
+    return 0
+  fi
+
+  case "$transform" in
+    1 | 3) src="$tpl_dir/config.portrait.jsonc" ;;
+    *) src="$tpl_dir/config.landscape.jsonc" ;;
+  esac
+
+  if [ ! -f "$src" ]; then
+    src="$tpl_dir/config.jsonc"
+  fi
+  if [ ! -f "$src" ]; then
+    return 0
+  fi
+
+  mkdir -p "$WAYBAR_DIR"
+  cp -f "$src" "$active"
+}
+
+# Compositor relayout forceren vóór Waybar opnieuw layer-shell registreert
+refresh_hypr_layout() {
+  local mon="$1" transform="$2"
+
+  if ! command -v hyprctl >/dev/null 2>&1; then
+    return 0
+  fi
+
+  hyprctl reload >/dev/null 2>&1 || true
+  sleep 0.45
+
+  if command -v jq >/dev/null 2>&1; then
+    local scale mode out
+    scale="$(hyprctl monitors -j 2>/dev/null | jq -r --arg m "$mon" '.[] | select(.name == $m) | .scale // 1')"
+    mode="$(hyprctl monitors -j 2>/dev/null | jq -r --arg m "$mon" '
+      .[] | select(.name == $m) |
+      "\(.width)x\(.height)@\(.refreshRate)Hz"
+    ')"
+    if [ -n "$mode" ] && [ "$mode" != "null" ] && [ -n "$scale" ]; then
+      out="$(hyprctl keyword "monitor ${mon},${mode},0x0,${scale},transform,${transform}" 2>&1)" || true
+      hyprctl_ok "$out" || true
+      sleep 0.2
+      out="$(hyprctl keyword "monitor ${mon},transform,${transform}" 2>&1)" || true
+      hyprctl_ok "$out" || true
+      sleep 0.2
+      # Nudge layout (sommige Hyprland-builds updaten input pas na resize)
+      local w h
+      w="$(hyprctl monitors -j 2>/dev/null | jq -r --arg m "$mon" '.[] | select(.name == $m) | .width // 0')"
+      h="$(hyprctl monitors -j 2>/dev/null | jq -r --arg m "$mon" '.[] | select(.name == $m) | .height // 0')"
+      if [ -n "$w" ] && [ "$w" != "0" ] && [ -n "$h" ] && [ "$h" != "0" ]; then
+        hyprctl dispatch resizemonitor "$mon" "$w" "$h" 2>/dev/null || true
+      fi
+    fi
+  fi
+}
+
+find_start_waybar() {
+  local candidate=""
   for candidate in \
     "$SCRIPT_DIR/start-waybar.sh" \
     "${XDG_CONFIG_HOME:-$HOME/.config}/big-sur/scripts/start-waybar.sh"; do
     if [ -x "$candidate" ]; then
-      start_script="$candidate"
-      break
+      echo "$candidate"
+      return 0
     fi
   done
+  return 1
+}
 
-  # Korte pauze: compositor moet transform/layout afronden vóór Waybar opnieuw positioneert
+# SIGUSR1/2 herlaadt config, niet input-regio's — pkill -9 + nieuwe layer-shell
+restart_waybar_after_rotation() {
+  local mon="$1" transform="$2"
+  local start_script=""
+
+  notify_step "Wacht op compositor…"
+  if ! wait_for_transform "$mon" "$transform"; then
+    notify_step "Transform nog niet bevestigd — Waybar-herstart gaat door."
+  fi
+
+  notify_step "Waybar-config (${transform})…"
+  activate_waybar_config "$transform"
+
+  notify_step "Herstart Waybar (klikzones)…"
+  if command -v hyprctl >/dev/null 2>&1; then
+    refresh_hypr_layout "$mon" "$transform"
+  fi
+
+  sleep "$SETTLE_SEC"
+
+  pkill -9 -x waybar 2>/dev/null || true
   sleep 0.35
 
+  start_script="$(find_start_waybar 2>/dev/null || echo "")"
   if [ -n "$start_script" ]; then
     "$start_script" >/dev/null 2>&1 || true
   elif command -v waybar >/dev/null 2>&1; then
-    pkill -x waybar 2>/dev/null || true
-    sleep 0.25
     nohup waybar >/dev/null 2>&1 &
   fi
 }
@@ -200,16 +324,22 @@ else
 fi
 
 write_state "$NEXT"
-restart_waybar
+restart_waybar_after_rotation "$MONITOR" "$NEXT"
 
 MSG="${MONITOR}: ${LABELS[$NEXT]}"
-MSG="$MSG\nWaybar herstart (klikzones gesynchroniseerd)."
+MSG="$MSG\nWaybar herstart (klikzones + ${SETTLE_SEC}s settle)."
 case "$NEXT" in
   1 | 3)
-    MSG="$MSG\nPortrait: pas eventueel margin-top/left/right in waybar/config.jsonc aan."
+    MSG="$MSG\nPortrait-config actief (config.portrait.jsonc)."
+    ;;
+  *)
+    MSG="$MSG\nLandscape-config actief (config.landscape.jsonc)."
     ;;
 esac
 if kanshi_conflict; then
   MSG="$MSG\nWaarschuwing: kanshi/shikane actief — kan rotatie overschrijven."
+fi
+if command -v hyprctl >/dev/null 2>&1 && ! wait_for_transform "$MONITOR" "$NEXT"; then
+  MSG="$MSG\nTransform niet bevestigd — probeer hyprctl reload of terug naar 0°."
 fi
 notify-send "Schermrotatie" "$MSG" 2>/dev/null || true

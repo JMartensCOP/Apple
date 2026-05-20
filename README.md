@@ -146,6 +146,8 @@ big-sur-hyprland-theme/
 │   └── theme.conf
 ├── waybar/
 │   ├── config.jsonc
+│   ├── config.landscape.jsonc
+│   ├── config.portrait.jsonc
 │   └── style.css
 ├── kitty/
 │   ├── kitty.conf
@@ -561,6 +563,8 @@ backup_path "$HOME/.config/dunst/dunstrc"
 cp "$PROJECT_DIR/assets/Background.jpg" "$HOME/.config/hypr/big-sur/Background.jpg"
 cp "$PROJECT_DIR/hypr/"*.conf "$HOME/.config/hypr/"
 cp "$PROJECT_DIR/waybar/config.jsonc" "$HOME/.config/waybar/config.jsonc"
+cp "$PROJECT_DIR/waybar/config.landscape.jsonc" "$HOME/.config/waybar/config.landscape.jsonc"
+cp "$PROJECT_DIR/waybar/config.portrait.jsonc" "$HOME/.config/waybar/config.portrait.jsonc"
 cp "$PROJECT_DIR/waybar/style.css" "$HOME/.config/waybar/style.css"
 cp "$PROJECT_DIR/kitty/kitty.conf" "$HOME/.config/kitty/kitty.conf"
 cp "$PROJECT_DIR/kitty/big-sur.conf" "$HOME/.config/kitty/big-sur.conf"
@@ -865,7 +869,7 @@ hyprctl keyword monitor <naam>,transform,<0-3>
 
 Waybar-knop `custom/rotate` (󰍹) en sneltoets **Super+Shift+R**. Status wordt bewaard in `~/.cache/big-sur/display-rotation`. Hyprland 0.54+: `hyprctl keyword monitor <naam>,transform,<0-3>` met fallback naar volledige monitor-regel; bij fouten `notify-send`. Als `hyprctl` niet beschikbaar is, valt het script terug op `wlr-randr --transform`.
 
-Na elke geslaagde rotatie **herstart het script automatisch Waybar** via `start-waybar.sh`, zodat klikzones overeenkomen met de zichtbare menubar (bekend Hyprland/Waybar-probleem na `transform`). In portrait (90°/270°) toont de melding een tip over `margin-top`/`margin-left`/`margin-right` in `waybar/config.jsonc`. Draait **kanshi** of **shikane**, dan waarschuwt de melding dat die rotatie kunnen overschrijven.
+Na elke geslaagde rotatie: wacht tot `hyprctl monitors -j` de transform bevestigt, kopieert **landscape** (`config.landscape.jsonc`, 0°/180°) of **portrait** (`config.portrait.jsonc`, 90°/270°) naar `~/.config/waybar/config.jsonc`, doet `hyprctl reload` + monitor-refresh, wacht ~1,2s, `pkill -9 waybar`, en start via `start-waybar.sh`. Meldingen tonen stappen (“Herstart Waybar (klikzones)…”). Draait **kanshi** of **shikane**, dan waarschuwt de melding dat die rotatie kunnen overschrijven.
 
 ### `scripts/diagnose-convertible.sh`
 
@@ -975,7 +979,7 @@ Naast `install.sh` moet de README ook handmatige installatie beschrijven:
 ```bash
 mkdir -p ~/.config/hypr ~/.config/waybar ~/.config/kitty
 cp -r hypr/*.conf ~/.config/hypr/
-cp waybar/config.jsonc ~/.config/waybar/config.jsonc
+cp waybar/config*.jsonc ~/.config/waybar/
 cp waybar/style.css ~/.config/waybar/style.css
 cp kitty/kitty.conf ~/.config/kitty/kitty.conf
 cp kitty/big-sur.conf ~/.config/kitty/big-sur.conf
@@ -1445,7 +1449,7 @@ Geen regels in `osk.log` na een Waybar-klik → het script wordt niet aangeroepe
 | `wvkbd` niet geïnstalleerd | AUR: `yay -S wvkbd-deskintl`. Fallback: `sudo pacman -S onboard` (wordt door `install.sh` meegeïnstalleerd). |
 | Rotatie: `hyprctl` zegt ok maar scherm draait niet | Externe monitor-daemon (**kanshi** / **shikane**) overschrijft Hyprland — uitschakelen of rotatie daar configureren. |
 | Rotatie: verkeerde monitor | Script kiest `eDP-*` automatisch; controleer met `hyprctl monitors`. |
-| Na rotatie: bar ok maar knoppen op verkeerde plek | Update scripts via `./install.sh -y` (auto Waybar-herstart). Handmatig: `start-waybar.sh`. Zie [Na rotatie klikken Waybar-knoppen niet](#na-rotatie-klikken-waybar-knoppen-niet). |
+| Na rotatie: bar ok maar knoppen op verkeerde plek | `./install.sh -y` (landscape/portrait configs + hard restart). Diagnose: `diagnose-convertible.sh`. Workaround: terug naar 0° of `hyprctl reload` + `pkill -9 waybar`. Zie [Na rotatie klikken Waybar-knoppen niet](#na-rotatie-klikken-waybar-knoppen-niet). |
 
 **Diagnose (op de laptop, in Hyprland-terminal):**
 
@@ -1479,27 +1483,33 @@ Waybar `custom/keyboard` gebruikt: `bash -lc '/usr/bin/bash "$HOME/.config/big-s
 
 **Oorzaak:** Hyprland past de monitor-`transform` toe, maar Waybar herberekent input-regio's niet altijd mee. Dit is een bekende mismatch tussen compositor-transform en layer-shell hitboxes.
 
-**Oplossing (automatisch):** Vanaf een recente versie van dit thema roept `rotate-display.sh` na elke geslaagde rotatie `start-waybar.sh` aan (korte pauze zodat Hyprland kan settelen). Update scripts op de laptop:
+**Oplossing (automatisch):** `rotate-display.sh` wacht op bevestigde transform, schakelt landscape/portrait Waybar-config, `hyprctl reload`, ~1,2s settle, `pkill -9 waybar`, en `start-waybar.sh`. Update op de laptop:
 
 ```bash
 cd /pad/naar/big-sur-hyprland-theme
 ./install.sh -y
-# of alleen scripts:
-cp scripts/rotate-display.sh scripts/start-waybar.sh ~/.config/big-sur/scripts/
-chmod +x ~/.config/big-sur/scripts/*.sh
 ```
 
-**Handmatig herstellen** (als je nog een oude `rotate-display.sh` hebt):
+Installeert ook `~/.config/waybar/config.landscape.jsonc` en `config.portrait.jsonc`.
+
+**Handmatig herstellen:**
 
 ```bash
 ~/.config/big-sur/scripts/start-waybar.sh
-# of:
-pkill waybar; ~/.config/big-sur/scripts/start-waybar.sh
+# of hard kill + start:
+pkill -9 waybar; sleep 0.4; ~/.config/big-sur/scripts/start-waybar.sh
+hyprctl reload
 ```
 
-**Portrait (90° / 270°):** Houd `"position": "top"` en `"layer": "top"` in `waybar/config.jsonc` — dat is correct. In staande modus kunnen `margin-top`, `margin-left` en `margin-right` visueel anders uitpakken; pas die waarden aan indien de bar te dicht tegen een rand zit.
+**Hyprland 0.54+ workaround:** Als klikzones na rotatie nog steeds op de oude (landscape) plek liggen:
 
-**Waybar `reload`-signaal:** `SIGUSR1`/`SIGUSR2` met `"on-sigusr1": "reload"` herlaadt alleen config, **niet** klikzones na rotatie. Gebruik een volledige herstart (`start-waybar.sh`).
+1. Draai terug naar **0°** (󰍹 of **Super+Shift+R** tot “0° (normaal)”), of druk **Super+Shift+R** twee keer (360° = zelfde orientatie, wel Waybar-herstart).
+2. `hyprctl reload`, wacht een seconde, dan `pkill -9 waybar` en `start-waybar.sh`.
+3. Pas portrait-margins aan in `waybar/config.portrait.jsonc` (niet alleen `config.jsonc`).
+
+**Portrait (90° / 270°):** Houd `"position": "top"` en `"layer": "top"`. Margins staan in `config.portrait.jsonc` (`margin-top` 12, links/rechts 10).
+
+**Waybar `reload`-signaal:** `SIGUSR1`/`SIGUSR2` herlaadt alleen config, **niet** klikzones na rotatie. Gebruik volledige herstart (`start-waybar.sh` of rotatie opnieuw).
 
 **kanshi / shikane:** Als rotatie terugspringt of Waybar vreemd blijft, controleer of een monitor-daemon actief is:
 
@@ -1651,6 +1661,8 @@ Genereer alle bestanden volgens de projectstructuur:
 - hypr/keybinds.conf
 - hypr/windowrules.conf
 - waybar/config.jsonc
+- waybar/config.landscape.jsonc
+- waybar/config.portrait.jsonc
 - waybar/style.css
 - kitty/kitty.conf
 - kitty/big-sur.conf

@@ -1,6 +1,6 @@
 {
-  // Big Sur floating menubar (default = landscape). Portrait: config.portrait.jsonc
-  // rotate-display.sh copies landscape/portrait variant to config.jsonc + hard restart
+  // Big Sur floating menubar — landscape (0° / 180°)
+  // rotate-display.sh copies this to ~/.config/waybar/config.jsonc for transform 0 and 2
   "layer": "top",
   "position": "top",
   "height": 36,
