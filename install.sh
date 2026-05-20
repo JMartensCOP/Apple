@@ -201,6 +201,9 @@ ARCH_PACKAGES=(
   pipewire-pulse
   pipewire-alsa
   wireplumber
+  alsa-utils
+  alsa-firmware
+  sof-firmware
   networkmanager
   network-manager-applet
   bluez

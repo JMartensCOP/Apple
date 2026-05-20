@@ -28,6 +28,20 @@ Na installatie: druk **Super+L** om te vergrendelen. Ontgrendelen met je Linux-g
 
 Handmatig testen: `hyprlock` (leest standaard `~/.config/hypr/hyprlock.conf`).
 
+### Automatisch vergrendelen bij opstarten
+
+Na installatie start Hyprland met **hyprlock** in plaats van een lege desktop of terminal. Volgorde in `hypr/hyprland.conf`:
+
+1. `start-session.sh` — `hyprpaper`, korte pauze (`0.5s`), daarna `hyprlock`
+2. Waybar (na `sleep 1`; fullscreen lockscherm bedekt de menubar tot je ontgrendelt)
+3. `dunst`
+
+Kitty/terminal wordt **niet** automatisch gestart. Open een terminal met **Super+T** of via het Waybar-dockicoon.
+
+**TTY vóór Hyprland:** wat je ziet *vóór* Hyprland (tekstlogin op een virtuele console, soms een kort flitsende shell) valt buiten dit thema. Dat regel je met je **display manager** (bijv. SDDM, GDM, LightDM) of door Hyprland als enige sessie via `~/.bash_profile` / `~/.zprofile` te starten. Wil je geen TTY-prompt zien, gebruik een grafische loginmanager in plaats van handmatig `Hyprland` typen op tty1.
+
+Na wijzigingen: `hyprctl reload` en opnieuw inloggen, of `./scripts/reload-theme.sh`.
+
 ## Doel Van Het Project
 
 Het doel is om een moderne Linux desktop te maken die visueel aansluit bij het macOS Big Sur kleurenschema: diepe nachtblauwe achtergronden, zachte rode en paarse accenten, koele cyaan/blauwe tinten, glasachtige panelen, subtiele transparantie en afgeronde vormen.
@@ -150,6 +164,7 @@ big-sur-hyprland-theme/
 │   └── dunstrc
 └── scripts/
     ├── apply-wallpaper.sh
+    ├── start-session.sh
     ├── start-waybar.sh
     ├── reload-theme.sh
     ├── backup-configs.sh
@@ -409,6 +424,9 @@ pipewire
 pipewire-pulse
 pipewire-alsa
 wireplumber
+alsa-utils
+alsa-firmware
+sof-firmware
 networkmanager
 network-manager-applet
 bluez
@@ -423,10 +441,10 @@ inter-font
 Voor Arch:
 
 ```bash
-sudo pacman -S hyprland waybar kitty hyprpaper rofi-wayland dunst wl-clipboard grim slurp brightnessctl playerctl pavucontrol pipewire pipewire-pulse pipewire-alsa wireplumber networkmanager network-manager-applet bluez blueman upower dolphin firefox ttf-jetbrains-mono-nerd inter-font
+sudo pacman -S hyprland waybar kitty hyprpaper rofi-wayland dunst wl-clipboard grim slurp brightnessctl playerctl pavucontrol pipewire pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-firmware sof-firmware networkmanager network-manager-applet bluez blueman upower dolphin firefox ttf-jetbrains-mono-nerd inter-font
 ```
 
-**Audio (Arch):** gebruik **PipeWire** met `pipewire-pulse` (PulseAudio-compatibiliteit voor Waybar `pulseaudio`-module en `pavucontrol`). Het legacy `pulseaudio`-pakket is niet nodig. `install.sh` installeert de PipeWire-pakketten en schakelt de officiële user-units in via `scripts/enable-audio.sh`:
+**Audio (Arch):** gebruik **PipeWire** met `pipewire-pulse` (PulseAudio-compatibiliteit voor Waybar `pulseaudio`-module en `pavucontrol`). Het legacy `pulseaudio`-pakket is niet nodig. Voor Intel-laptops (bijv. HP EliteBook) installeert `install.sh` ook `alsa-firmware`, `sof-firmware` en `alsa-utils`. `install.sh` schakelt de officiële user-units in via `scripts/enable-audio.sh` en probeert laptop-speakers als standaard uitgang via `scripts/fix-audio.sh --auto`:
 
 ```text
 pipewire.service
@@ -626,8 +644,8 @@ source = ~/.config/hypr/theme.conf
 source = ~/.config/hypr/keybinds.conf
 source = ~/.config/hypr/windowrules.conf
 
+exec-once = bash -c 'S="$HOME/.config/big-sur/scripts/start-session.sh"; if [ -x "$S" ]; then exec "$S"; else hyprpaper & sleep 0.5 && exec hyprlock; fi'
 exec-once = bash -c 'sleep 1; S="$HOME/.config/big-sur/scripts/start-waybar.sh"; if [ -x "$S" ]; then exec "$S"; else exec waybar; fi'
-exec-once = hyprpaper
 exec-once = dunst
 
 monitor = ,preferred,auto,1
@@ -768,16 +786,30 @@ swww query >/dev/null 2>&1 || swww init
 swww img "$WALLPAPER" --transition-type grow --transition-duration 1
 ```
 
+### `scripts/start-session.sh`
+
+Start bij Hyprland-login: `hyprpaper`, korte pauze, daarna `hyprlock`. Wordt via `exec-once` in `hyprland.conf` aangeroepen zodat je direct het vergrendelscherm ziet (geen desktop/terminal tot ontgrendelen).
+
 ### `scripts/start-waybar.sh`
 
 Start Waybar veilig: controleert binary en `~/.config/waybar/config.jsonc`, stopt oude instanties, logt naar `~/.cache/big-sur/waybar.log`.
 
 ### `scripts/enable-audio.sh`
 
-Schakelt de stock Arch **PipeWire** user-services in en start ze (`pipewire`, `pipewire-pulse`, `wireplumber`). Wordt automatisch aangeroepen door `install.sh` op Linux met een actieve systemd user-sessie. Handmatig:
+Schakelt de stock Arch **PipeWire** user-services in en start ze (`pipewire`, `pipewire-pulse`, `wireplumber`), controleert of ze actief zijn, en roept `fix-audio.sh --auto` aan om analoge laptop-speakers te prefereren. Wordt automatisch aangeroepen door `install.sh` op Linux met een actieve systemd user-sessie. Handmatig:
 
 ```bash
 bash ~/.config/big-sur/scripts/enable-audio.sh
+```
+
+### `scripts/fix-audio.sh`
+
+Diagnose en herstel wanneer je geen speakers ziet in pavucontrol of het verkeerde apparaat (HDMI) actief is:
+
+```bash
+bash ~/.config/big-sur/scripts/fix-audio.sh          # interactief: lijst sinks, kies uitgang
+bash ~/.config/big-sur/scripts/fix-audio.sh --auto   # prefer analog/built-in speakers
+wpctl status                                         # snelle status
 ```
 
 ### `scripts/reload-theme.sh`
@@ -943,6 +975,7 @@ waybar   # stop met Ctrl+C na controle; fouten verschijnen in de terminal
 **Hyprland autostart** (in `~/.config/hypr/hyprland.conf` na installatie):
 
 ```ini
+exec-once = bash -c 'S="$HOME/.config/big-sur/scripts/start-session.sh"; if [ -x "$S" ]; then exec "$S"; else hyprpaper & sleep 0.5 && exec hyprlock; fi'
 exec-once = bash -c 'sleep 1; S="$HOME/.config/big-sur/scripts/start-waybar.sh"; if [ -x "$S" ]; then exec "$S"; else exec waybar; fi'
 ```
 
@@ -1056,7 +1089,7 @@ Arch gebruikt PipeWire; Waybar blijft de module-naam `pulseaudio` gebruiken (com
 1. Installeer pakketten (of `./install.sh` op Linux):
 
 ```bash
-sudo pacman -S --needed pipewire pipewire-pulse pipewire-alsa wireplumber pavucontrol
+sudo pacman -S --needed pipewire pipewire-pulse pipewire-alsa wireplumber pavucontrol alsa-utils alsa-firmware sof-firmware
 ```
 
 2. Schakel user-services in:
@@ -1075,6 +1108,50 @@ pactl info   # Server Name: PulseAudio (on PipeWire ...)
 ```
 
 4. Herstart Waybar na installatie.
+
+### Speakers Niet Zichtbaar in pavucontrol
+
+Op een HP EliteBook (Intel) heet de uitgang vaak **Built-in Audio Analog Stereo**, niet letterlijk "Speakers". Waybar opent pavucontrol via het audio-icoon (quick bar en volume in de statusbalk).
+
+1. **Services en firmware**
+
+```bash
+sudo pacman -S --needed pipewire pipewire-pulse pipewire-alsa wireplumber pavucontrol alsa-utils alsa-firmware sof-firmware
+bash ~/.config/big-sur/scripts/enable-audio.sh
+```
+
+2. **Diagnose — zijn er sinks?**
+
+```bash
+wpctl status
+pactl list sinks short
+systemctl --user status pipewire wireplumber pipewire-pulse
+```
+
+Geen sinks → meestal `wireplumber` niet actief of Intel-firmware ontbreekt (`sof-firmware`). Herstart services of log opnieuw in.
+
+3. **Verkeerd profiel (HDMI i.p.v. speakers)**
+
+Open pavucontrol → tabblad **Configuratie** → kies **Analog Stereo** (niet HDMI / DisplayPort). Tabblad **Uitgang** → selecteer **Built-in Audio** en zet volume omhoog (niet gedempt).
+
+4. **Automatisch standaard uitgang instellen**
+
+```bash
+bash ~/.config/big-sur/scripts/fix-audio.sh --auto
+# of interactief:
+bash ~/.config/big-sur/scripts/fix-audio.sh
+speaker-test -c 2 -t wav -l 1
+```
+
+5. **Waybar toont geen volume**
+
+Controleer `pactl info` (Server Name: PulseAudio on PipeWire). Herstart Waybar:
+
+```bash
+pkill waybar && ~/.config/big-sur/scripts/start-waybar.sh
+```
+
+Hover over het volume-icoon in Waybar: tooltip toont `{desc}` (actieve sink-naam).
 
 ### Hyprland Config Geeft Fouten
 
