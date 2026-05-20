@@ -626,10 +626,11 @@ kb_layout = nl
 
 ## Window Rules
 
-Hyprland 0.48+ gebruikt `windowrule` met expliciete `match:`-velden (niet meer `windowrulev2`). Aanbevolen regels in `hypr/windowrules.conf`:
+Hyprland 0.48+ gebruikt `windowrule` met expliciete `match:`-velden (niet meer `windowrulev2`). Vanaf 0.54+ moet elke named rule `name = ...` als eerste sleutel hebben. Aanbevolen regels in `hypr/windowrules.conf`:
 
 ```ini
 windowrule {
+    name = pavucontrol-float
     match:class = ^(pavucontrol)$
     float = on
     size = 760 520
@@ -637,12 +638,14 @@ windowrule {
 }
 
 windowrule {
+    name = blueman-manager-float
     match:class = ^(blueman-manager)$
     float = on
     center = on
 }
 
 windowrule {
+    name = kitty-opacity
     match:class = ^(kitty)$
     opacity = 0.94 0.88
 }
