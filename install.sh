@@ -170,6 +170,27 @@ install_dependencies() {
   sudo pacman -S --needed "${ARCH_PACKAGES[@]}"
 }
 
+install_osk_optional() {
+  if is_windows_shell || ! is_linux; then
+    return 0
+  fi
+
+  if command -v wvkbd-deskintl >/dev/null 2>&1 || command -v wvkbd-mobintl >/dev/null 2>&1; then
+    echo "Schermtoetsenbord: wvkbd-binaries gevonden."
+    return 0
+  fi
+
+  echo ""
+  echo "=== Schermtoetsenbord (wvkbd) ==="
+  echo "wvkbd staat niet in de officiële Arch-repositories (alleen AUR)."
+  echo "Geen systemd-service — start via Waybar 󰌌 of:"
+  echo "  bash \"$PROJECT_DIR/scripts/toggle-osk.sh\""
+  echo ""
+  echo "Installeer handmatig met yay/paru (één layout volstaat):"
+  echo "  yay -S wvkbd-deskintl    # aanbevolen op vouw-/touchscherm"
+  echo "  yay -S wvkbd             # mobintl layout"
+}
+
 enable_audio_services() {
   local script="$PROJECT_DIR/scripts/enable-audio.sh"
 
@@ -299,7 +320,6 @@ ARCH_PACKAGES=(
   code
   ttf-jetbrains-mono-nerd
   inter-font
-  wvkbd
   wlr-randr
 )
 
@@ -322,6 +342,7 @@ print_environment_summary
 confirm_target_if_needed
 
 install_dependencies
+install_osk_optional
 enable_audio_services
 enable_network_services
 install_display_manager

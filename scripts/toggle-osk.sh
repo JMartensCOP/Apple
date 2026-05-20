@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
-# Toggle Wayland on-screen keyboard (wvkbd). Arch: pacman -S wvkbd
+# Toggle Wayland on-screen keyboard (wvkbd). Geen systemd — start/kill binary direct.
+# Arch: AUR only — yay -S wvkbd-deskintl  (of wvkbd voor mobintl)
 set -euo pipefail
 
 OSK_BIN=""
-for candidate in wvkbd-deskintl wvkbd-mobintl wvkbd; do
+for candidate in wvkbd-deskintl wvkbd-mobintl; do
   if command -v "$candidate" >/dev/null 2>&1; then
     OSK_BIN="$candidate"
     break
@@ -19,8 +20,8 @@ if [ -z "$OSK_BIN" ]; then
     fi
     exit 0
   fi
-  notify-send "Schermtoetsenbord" "Installeer wvkbd: sudo pacman -S wvkbd" 2>/dev/null || true
-  echo "Geen wvkbd of onboard gevonden. Installeer: sudo pacman -S wvkbd" >&2
+  notify-send "Schermtoetsenbord" "Installeer wvkbd via AUR: yay -S wvkbd-deskintl" 2>/dev/null || true
+  echo "Geen wvkbd of onboard gevonden. Arch (AUR): yay -S wvkbd-deskintl" >&2
   exit 1
 fi
 

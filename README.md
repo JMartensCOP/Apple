@@ -449,14 +449,21 @@ firefox
 code
 ttf-jetbrains-mono-nerd
 inter-font
-wvkbd
 wlr-randr
 ```
 
-Voor Arch:
+**Schermtoetsenbord (wvkbd):** staat **niet** in de officiële Arch-repositories — alleen [AUR](https://aur.archlinux.org/packages/wvkbd). Er is **geen** systemd user-service; start via Waybar 󰌌 of `toggle-osk.sh`.
 
 ```bash
-sudo pacman -S hyprland waybar kitty hyprpaper rofi-wayland dunst wl-clipboard grim slurp brightnessctl playerctl pavucontrol pipewire pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-firmware sof-firmware networkmanager network-manager-applet iw wireless-regdb linux-firmware bluez blueman upower dolphin firefox code ttf-jetbrains-mono-nerd inter-font wvkbd wlr-randr
+yay -S wvkbd-deskintl    # aanbevolen op vouw-/touchscherm (HP EliteBook x360)
+# of:
+yay -S wvkbd             # mobintl layout → binary wvkbd-mobintl
+```
+
+Voor Arch (officiële repos):
+
+```bash
+sudo pacman -S hyprland waybar kitty hyprpaper rofi-wayland dunst wl-clipboard grim slurp brightnessctl playerctl pavucontrol pipewire pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-firmware sof-firmware networkmanager network-manager-applet iw wireless-regdb linux-firmware bluez blueman upower dolphin firefox code ttf-jetbrains-mono-nerd inter-font wlr-randr
 ```
 
 **Audio (Arch):** gebruik **PipeWire** met `pipewire-pulse` (PulseAudio-compatibiliteit voor Waybar `pulseaudio`-module en `pavucontrol`). Het legacy `pulseaudio`-pakket is niet nodig. Voor Intel-laptops (bijv. HP EliteBook) installeert `install.sh` ook `alsa-firmware`, `sof-firmware` en `alsa-utils`. `install.sh` schakelt de officiële user-units in via `scripts/enable-audio.sh` en probeert laptop-speakers als standaard uitgang via `scripts/fix-audio.sh --auto`:
@@ -842,13 +849,15 @@ wpctl status                                         # snelle status
 
 ### `scripts/toggle-osk.sh`
 
-Schakelt een **Wayland-schermtoetsenbord** in/uit. Voorkeur: **wvkbd** (`wvkbd-deskintl`, `wvkbd-mobintl` of `wvkbd`). Valt terug op **onboard** als wvkbd ontbreekt. Waybar-knop `custom/keyboard` (󰌌) in `group/quick`.
+Schakelt een **Wayland-schermtoetsenbord** in/uit. Voorkeur: **wvkbd** (`wvkbd-deskintl` of `wvkbd-mobintl`). Valt terug op **onboard** als wvkbd ontbreekt. Waybar-knop `custom/keyboard` (󰌌) in `group/quick`.
+
+**Geen systemd:** wvkbd is een gewoon proces — niet `systemctl enable wvkbd` (die unit bestaat niet).
 
 ```bash
 bash ~/.config/big-sur/scripts/toggle-osk.sh
 ```
 
-Arch: `sudo pacman -S wvkbd` (wordt door `install.sh` meegeïnstalleerd).
+Arch: installeer via AUR (`yay -S wvkbd-deskintl`). `install.sh` print AUR-instructies; het pakket zit niet in `pacman -S`.
 
 ### `scripts/rotate-display.sh`
 
@@ -1239,7 +1248,7 @@ Dit thema werkt op een **HP EliteBook x360** (2-in-1 business-laptop) zonder spe
 
 6. **Verticaal / tablet-modus (vouw-laptop)** — Na `./install.sh` op Linux:
    - **Rotatie:** klik 󰍹 in Waybar of druk **Super+Shift+R** (elke druk: 0° → 90° → 180° → 270°). Script: `~/.config/big-sur/scripts/rotate-display.sh`. Vereist Hyprland (`hyprctl keyword monitor eDP-1,transform,<0-3>`) of fallback `wlr-randr`.
-   - **Schermtoetsenbord:** klik 󰌌 in Waybar → `toggle-osk.sh` (wvkbd). Op vouw-/touchschermen is `wvkbd-deskintl` vaak prettiger dan `wvkbd-mobintl`; beide zitten in het Arch-pakket `wvkbd`.
+   - **Schermtoetsenbord:** klik 󰌌 in Waybar → `toggle-osk.sh` (wvkbd). Installeer eerst via AUR: `yay -S wvkbd-deskintl` (vouw-/touchscherm) of `yay -S wvkbd` (mobintl). Geen `systemctl enable wvkbd`.
    - Draai je fysiek het scherm zonder knop: er is **geen** automatische rotatie; gebruik de Waybar-knop of sneltoets.
    - Werkt rotatie niet terwijl `hyprctl` “ok” zegt: controleer of **kanshi/shikane** niet tegelijk je monitors beheert (die overschrijven `hyprctl keyword`). Zie [Hyprland monitors](https://wiki.hypr.land/Configuring/Monitors/).
 
@@ -1260,6 +1269,26 @@ bash ~/.config/big-sur/scripts/toggle-osk.sh
 ```
 
 Na wijzigingen aan `waybar/config.jsonc`: `pkill waybar && ~/.config/big-sur/scripts/start-waybar.sh`.
+
+### Schermtoetsenbord: `error target not found wvkbd`
+
+**Symptoom:** `error: target not found: wvkbd` (soms verkeerd gelezen als `WVkBD`) tijdens `./install.sh` of `pacman -S wvkbd`.
+
+**Oorzaak:** `wvkbd` staat **niet** in de officiële Arch-repositories — alleen in de **AUR**. Dit is een **pacman**-fout, geen systemd-service.
+
+**Oplossing:**
+
+```bash
+# Installeer via AUR-helper (yay of paru):
+yay -S wvkbd-deskintl    # aanbevolen op HP EliteBook x360 / touch
+# of:
+yay -S wvkbd               # levert wvkbd-mobintl
+
+# Toggle (geen systemctl):
+bash ~/.config/big-sur/scripts/toggle-osk.sh
+```
+
+Gebruik **niet** `systemctl enable wvkbd` — er is geen `wvkbd.service` op Arch.
 
 ### Geen Geluid / Waybar Volume Werkt Niet
 
