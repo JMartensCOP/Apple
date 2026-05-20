@@ -4,12 +4,69 @@ set -euo pipefail
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BACKUP_DIR="$HOME/.config/big-sur-theme-backup-$(date +%Y%m%d-%H%M%S)"
 
+# Arch-pakketten uit README (Dependencies)
+ARCH_PACKAGES=(
+  hyprland
+  waybar
+  kitty
+  hyprpaper
+  rofi-wayland
+  dunst
+  wl-clipboard
+  grim
+  slurp
+  brightnessctl
+  playerctl
+  pavucontrol
+  networkmanager
+  ttf-jetbrains-mono-nerd
+  inter-font
+)
+
+install_dependencies() {
+  if ! command -v pacman >/dev/null 2>&1; then
+    echo "pacman niet gevonden; pakketinstallatie overgeslagen."
+    echo "Op Arch Linux: sudo pacman -S --needed ${ARCH_PACKAGES[*]}"
+    return 0
+  fi
+
+  if [ "$(uname -s 2>/dev/null || echo unknown)" != "Linux" ]; then
+    echo "Geen Linux-omgeving; pakketinstallatie overgeslagen."
+    return 0
+  fi
+
+  if [ -r /etc/os-release ]; then
+    # shellcheck source=/dev/null
+    . /etc/os-release
+    case "${ID:-}${ID_LIKE:-}" in
+      *arch*|*Arch*)
+        ;;
+      *)
+        echo "Waarschuwing: dit lijkt geen Arch-systeem (${PRETTY_NAME:-onbekend})."
+        echo "Pakketinstallatie wordt overgeslagen; gebruik distro-specifieke pakketnamen."
+        return 0
+        ;;
+    esac
+  fi
+
+  if ! command -v sudo >/dev/null 2>&1; then
+    echo "sudo niet gevonden; installeer pakketten handmatig als root:"
+    echo "pacman -S --needed ${ARCH_PACKAGES[*]}"
+    return 0
+  fi
+
+  echo "Installeer benodigde pakketten via pacman..."
+  sudo pacman -S --needed "${ARCH_PACKAGES[@]}"
+}
+
 echo "Installing Big Sur Hyprland theme..."
 
 if [ ! -f "$PROJECT_DIR/assets/Background.jpg" ]; then
   echo "Missing assets/Background.jpg"
   exit 1
 fi
+
+install_dependencies
 
 mkdir -p "$BACKUP_DIR"
 mkdir -p "$HOME/.config/hypr"
