@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
-# Diagnose schermtoetsenbord + rotatie op vouw-/convertible-laptops (bijv. HP EliteBook x360)
+# Diagnose schermtoetsenbord op vouw-/convertible-laptops (bijv. HP EliteBook x360)
 set -uo pipefail
 
 CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}"
 SCRIPTS="$CONFIG/big-sur/scripts"
 WAYBAR_CFG="$CONFIG/waybar/config.jsonc"
 
-echo "=== Big Sur — convertible diagnose ==="
+echo "=== Big Sur — convertible diagnose (OSK) ==="
 echo "Gebruiker: ${USER:-?}  HOME=$HOME"
 echo ""
 
 echo "--- Scripts (~/.config/big-sur/scripts/) ---"
-for s in toggle-osk.sh rotate-display.sh; do
+for s in toggle-osk.sh; do
   p="$SCRIPTS/$s"
   if [ -f "$p" ]; then
     if [ -x "$p" ]; then
@@ -28,16 +28,15 @@ echo ""
 
 echo "--- Waybar on-click paden ---"
 if [ -f "$WAYBAR_CFG" ]; then
-  if grep -q 'big-sur/scripts/toggle-osk.sh' "$WAYBAR_CFG" 2>/dev/null \
-    && grep -q 'big-sur/scripts/rotate-display.sh' "$WAYBAR_CFG" 2>/dev/null; then
-    echo "  OK  config.jsonc verwijst naar big-sur/scripts/*.sh"
+  if grep -q 'big-sur/scripts/toggle-osk.sh' "$WAYBAR_CFG" 2>/dev/null; then
+    echo "  OK  config.jsonc verwijst naar toggle-osk.sh"
     if grep -q 'bash -lc.*toggle-osk' "$WAYBAR_CFG" 2>/dev/null; then
       echo "  OK  keyboard on-click gebruikt bash -lc (HOME-expansie)"
     else
       echo "  WAARSCHUWING: keyboard on-click zonder bash -lc — update waybar/config.jsonc"
     fi
   else
-    echo "  WAARSCHUWING: waybar/config.jsonc mist paden naar toggle-osk / rotate-display"
+    echo "  WAARSCHUWING: waybar/config.jsonc mist pad naar toggle-osk.sh"
     echo "    Herinstalleer: ./install.sh -y"
   fi
 else
@@ -73,24 +72,6 @@ if [ -x "$SCRIPTS/test-osk.sh" ]; then
 fi
 echo ""
 
-echo "--- Schermrotatie ---"
-ROT_STATE="${XDG_STATE_HOME:-$HOME/.cache}/big-sur/display-rotation"
-if [ -f "$ROT_STATE" ]; then
-  echo "  Cache state (~/.cache/big-sur/display-rotation): $(cat "$ROT_STATE" 2>/dev/null)"
-fi
-if command -v hyprctl >/dev/null 2>&1; then
-  echo "  hyprctl monitors (naam + transform):"
-  hyprctl monitors 2>/dev/null | grep -E '^Monitor |transform:' || hyprctl monitors
-  if command -v jq >/dev/null 2>&1; then
-    echo "  JSON (alle monitors):"
-    hyprctl monitors -j 2>/dev/null | jq -r '.[] | "\(.name) transform=\(.transform) \(.width)x\(.height)@\(.refreshRate)Hz scale=\(.scale)"'
-  else
-    echo "  Tip: sudo pacman -S jq  (betere monitor-detectie in rotate-display.sh)"
-  fi
-else
-  echo "  hyprctl niet gevonden (geen Hyprland-sessie?)"
-fi
-echo ""
 echo "--- Waybar proces + config ---"
 if pgrep -x waybar >/dev/null 2>&1; then
   echo "  PID: $(pgrep -x waybar | tr '\n' ' ' | sed 's/ $//')"
@@ -98,42 +79,19 @@ if pgrep -x waybar >/dev/null 2>&1; then
 else
   echo "  Geen waybar-proces actief."
 fi
-for variant in config.jsonc config.landscape.jsonc config.portrait.jsonc; do
-  p="$CONFIG/waybar/$variant"
-  if [ -f "$p" ]; then
-    echo "  OK  $p"
-  else
-    echo "  ONTBREEKT: $p  (./install.sh -y)"
-  fi
-done
 if [ -f "$WAYBAR_CFG" ]; then
-  if grep -q 'portrait (90° / 270°)' "$WAYBAR_CFG" 2>/dev/null \
-    || grep -q '"margin-top": 12' "$WAYBAR_CFG" 2>/dev/null; then
-    echo "  Actieve config lijkt portrait (margins/config.portrait.jsonc)"
-  elif grep -q 'landscape (0° / 180°)' "$WAYBAR_CFG" 2>/dev/null; then
-    echo "  Actieve config lijkt landscape (config.landscape.jsonc)"
-  else
-    echo "  Actieve config: onbekende variant (vergelijk margins met landscape/portrait templates)"
-  fi
-fi
-if command -v wlr-randr >/dev/null 2>&1; then
-  echo "  wlr-randr outputs:"
-  wlr-randr 2>/dev/null | awk '/^[^ ]/ { print "   ", $0 }' | head -6
-fi
-if command -v kanshi >/dev/null 2>&1 || command -v shikane >/dev/null 2>&1; then
-  echo "  WAARSCHUWING: kanshi/shikane gedetecteerd — kan hyprctl rotatie overschrijven."
+  echo "  OK  $WAYBAR_CFG"
+else
+  echo "  ONTBREEKT: $WAYBAR_CFG  (./install.sh -y)"
 fi
 echo ""
 
 echo "--- Handmatige test ---"
-if [ -x "$SCRIPTS/rotate-display.sh" ]; then
-  echo "  bash \"$SCRIPTS/rotate-display.sh\""
-else
-  echo "  (rotate-display.sh ontbreekt — eerst install.sh)"
-fi
 if [ -x "$SCRIPTS/toggle-osk.sh" ]; then
   echo "  bash \"$SCRIPTS/toggle-osk.sh\""
 fi
-  echo "  Waybar herladen: \"$SCRIPTS/start-waybar.sh\" (rotate-display.sh doet dit automatisch na rotatie)"
+if [ -x "$SCRIPTS/start-waybar.sh" ]; then
+  echo "  Waybar herladen: \"$SCRIPTS/start-waybar.sh\""
+fi
 echo ""
 echo "Klaar."

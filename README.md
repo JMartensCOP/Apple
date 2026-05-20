@@ -146,8 +146,6 @@ big-sur-hyprland-theme/
 │   └── theme.conf
 ├── waybar/
 │   ├── config.jsonc
-│   ├── config.landscape.jsonc
-│   ├── config.portrait.jsonc
 │   └── style.css
 ├── kitty/
 │   ├── kitty.conf
@@ -164,7 +162,6 @@ big-sur-hyprland-theme/
     ├── reload-theme.sh
     ├── toggle-osk.sh
     ├── test-osk.sh
-    ├── rotate-display.sh
     ├── diagnose-convertible.sh
     ├── backup-configs.sh
     ├── enable-audio.sh
@@ -254,7 +251,7 @@ Waybar voelt als een **zwevende Big Sur menubar** (36px hoog, 8px top-margin, af
 |------|---------|
 | Links | `group/launchers` — dock-pill met terminal, browser, bestandsbeheer, VS Code |
 | Midden | `hyprland/workspaces` — 5 persistente workspaces (●/○) |
-| Rechts | `group/quick` (toetsenbord, rotatie, herstart, audio, wifi, bluetooth) + `group/status` (audio, netwerk, batterij, tray) + `clock` |
+| Rechts | `group/quick` (toetsenbord, herstart, audio, wifi, bluetooth) + `group/status` (audio, netwerk, batterij, tray) + `clock` |
 
 ### Waybar Modules
 
@@ -277,7 +274,6 @@ Rechts vóór de status-pill: `group/quick` met klikbare custom-modules:
 | Module | Icoon | Klik | Actie |
 |--------|-------|------|-------|
 | `custom/keyboard` | 󰌌 | Links | `toggle-osk.sh` — schermtoetsenbord (wvkbd) aan/uit |
-| `custom/rotate` | 󰍹 | Links | `rotate-display.sh` — rotatie 0° → 90° → 180° → 270° |
 | `custom/restart` | 󰑐 | Links | `~/.config/big-sur/scripts/restart-session.sh` — Hyprland + Waybar + wallpaper herladen |
 | `custom/restart` | 󰑐 | Rechts | `restart-computer.sh` — bevestiging (rofi/wofi) en `loginctl reboot` |
 | `custom/audio` | 󰓃 | Links | `pavucontrol` |
@@ -302,7 +298,7 @@ Zie `waybar/style.css`. Kernpunten:
 - `window#waybar` — floating bar: `border-radius: 14px`, glass panel `rgba(23, 23, 56, 0.58)`, box-shadow;
 - `#launchers` — dock-pill met hover-glow (cyaan) en active-state (paars);
 - `#workspaces` — gecentreerde pill, active workspace gradient `#67c7e8 → #b46cff`;
-- `#quick` — quick-action pill (zelfde stijl als launchers): toetsenbord, rotatie, herstart, audio, wifi, bluetooth;
+- `#quick` — quick-action pill (zelfde stijl als launchers): toetsenbord, herstart, audio, wifi, bluetooth;
 - `#status` — gegroepeerde status-pill; icon-only modules met tooltips;
 - `#clock` — aparte pill rechts, klik rechts wisselt datum/tijd.
 
@@ -449,7 +445,6 @@ firefox
 code
 ttf-jetbrains-mono-nerd
 inter-font
-wlr-randr
 ```
 
 **Schermtoetsenbord (wvkbd):** staat **niet** in de officiële Arch-repositories — alleen [AUR](https://aur.archlinux.org/packages/wvkbd). Fallback **onboard** via `pacman` (in `install.sh`). Geen systemd-service; start via Waybar 󰌌 of `toggle-osk.sh`.
@@ -463,7 +458,7 @@ yay -S wvkbd             # mobintl layout → binary wvkbd-mobintl
 Voor Arch (officiële repos):
 
 ```bash
-sudo pacman -S hyprland waybar kitty hyprpaper rofi-wayland dunst wl-clipboard grim slurp brightnessctl playerctl pavucontrol pipewire pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-firmware sof-firmware networkmanager network-manager-applet iw wireless-regdb linux-firmware bluez bluez-utils blueman upower dolphin firefox code ttf-jetbrains-mono-nerd inter-font wlr-randr jq onboard
+sudo pacman -S hyprland waybar kitty hyprpaper rofi-wayland dunst wl-clipboard grim slurp brightnessctl playerctl pavucontrol pipewire pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-firmware sof-firmware networkmanager network-manager-applet iw wireless-regdb linux-firmware bluez bluez-utils blueman upower dolphin firefox code ttf-jetbrains-mono-nerd inter-font onboard
 ```
 
 **Audio (Arch):** gebruik **PipeWire** met `pipewire-pulse` (PulseAudio-compatibiliteit voor Waybar `pulseaudio`-module en `pavucontrol`). Het legacy `pulseaudio`-pakket is niet nodig. Voor Intel-laptops (bijv. HP EliteBook) installeert `install.sh` ook `alsa-firmware`, `sof-firmware` en `alsa-utils`. `install.sh` schakelt de officiële user-units in via `scripts/enable-audio.sh` en probeert laptop-speakers als standaard uitgang via `scripts/fix-audio.sh --auto`:
@@ -563,8 +558,6 @@ backup_path "$HOME/.config/dunst/dunstrc"
 cp "$PROJECT_DIR/assets/Background.jpg" "$HOME/.config/hypr/big-sur/Background.jpg"
 cp "$PROJECT_DIR/hypr/"*.conf "$HOME/.config/hypr/"
 cp "$PROJECT_DIR/waybar/config.jsonc" "$HOME/.config/waybar/config.jsonc"
-cp "$PROJECT_DIR/waybar/config.landscape.jsonc" "$HOME/.config/waybar/config.landscape.jsonc"
-cp "$PROJECT_DIR/waybar/config.portrait.jsonc" "$HOME/.config/waybar/config.portrait.jsonc"
 cp "$PROJECT_DIR/waybar/style.css" "$HOME/.config/waybar/style.css"
 cp "$PROJECT_DIR/kitty/kitty.conf" "$HOME/.config/kitty/kitty.conf"
 cp "$PROJECT_DIR/kitty/big-sur.conf" "$HOME/.config/kitty/big-sur.conf"
@@ -660,8 +653,6 @@ bind = , XF86AudioMute, exec, wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle
 binde = , XF86MonBrightnessUp, exec, brightnessctl set +5%
 binde = , XF86MonBrightnessDown, exec, brightnessctl set 5%-
 
-# Convertible: schermrotatie (zelfde script als Waybar-knop)
-bind = $mainMod SHIFT, R, exec, /usr/bin/bash "$HOME/.config/big-sur/scripts/rotate-display.sh"
 ```
 
 Cursor moet deze keybinds splitsen naar `hypr/keybinds.conf` en vanuit `hyprland.conf` sourcen.
@@ -859,26 +850,12 @@ Arch: `install.sh` probeert `yay -S wvkbd-deskintl` als yay aanwezig is; anders 
 
 Controleert of `toggle-osk.sh` in `~/.config/big-sur/scripts/` staat, welke OSK-binary gebruikt zou worden, en voert daarna een toggle uit. Gebruik dit als Waybar 󰌌 niets lijkt te doen.
 
-### `scripts/rotate-display.sh`
-
-Roteert het **primaire paneel** (meestal `eDP-1` op laptops) in stappen **0° → 90° → 180° → 270°** via Hyprland:
-
-```bash
-hyprctl keyword monitor <naam>,transform,<0-3>
-```
-
-Waybar-knop `custom/rotate` (󰍹) en sneltoets **Super+Shift+R**. Status wordt bewaard in `~/.cache/big-sur/display-rotation`. Hyprland 0.54+: `hyprctl keyword monitor <naam>,transform,<0-3>` met fallback naar volledige monitor-regel; bij fouten `notify-send`. Als `hyprctl` niet beschikbaar is, valt het script terug op `wlr-randr --transform`.
-
-Na elke geslaagde rotatie: wacht tot `hyprctl monitors -j` de transform bevestigt, kopieert **landscape** (`config.landscape.jsonc`, 0°/180°) of **portrait** (`config.portrait.jsonc`, 90°/270°) naar `~/.config/waybar/config.jsonc`, doet `hyprctl reload` + monitor-refresh, wacht ~1,2s, `pkill -9 waybar`, en start via `start-waybar.sh`. Meldingen tonen stappen (“Herstart Waybar (klikzones)…”). Draait **kanshi** of **shikane**, dan waarschuwt de melding dat die rotatie kunnen overschrijven.
-
 ### `scripts/diagnose-convertible.sh`
 
-Optionele checklist voor vouw-laptops (HP EliteBook x360): scripts aanwezig/uitvoerbaar, Waybar-paden, wvkbd/onboard, `hyprctl monitors`, waarschuwing voor kanshi/shikane.
-
-Handmatig:
+Optionele checklist voor vouw-laptops (HP EliteBook x360): `toggle-osk.sh` aanwezig/uitvoerbaar, Waybar-pad naar OSK, wvkbd/onboard, Waybar-proces.
 
 ```bash
-bash ~/.config/big-sur/scripts/rotate-display.sh
+bash ~/.config/big-sur/scripts/diagnose-convertible.sh
 ```
 
 ### `scripts/launch-code.sh`
@@ -1378,8 +1355,6 @@ Dit thema werkt op een **HP EliteBook x360** (2-in-1 business-laptop) zonder spe
 | Touchpad | Werkt via Hyprland `input { touchpad { ... } }` | `natural_scroll`, `tap-to-click` in `hypr/hyprland.conf` |
 | Touchscreen | Vaak Wacom/ELAN; werkt vaak out-of-the-box als pointer | Geen aparte tablet-modus in Hyprland-config |
 | Schermtoetsenbord | Handig in tablet-/vouwstand | Waybar 󰌌 → `toggle-osk.sh` (**wvkbd**) |
-| Schermrotatie (handmatig) | Geen automatische G-sensor-rotate | Waybar 󰍹 of **Super+Shift+R** → `rotate-display.sh` (0°→90°→180°→270°) |
-| Auto-rotate (tablet) | **Niet** ingebouwd | Optioneel later: `iio-sensor-proxy` + script |
 | Vingerafdruk | Vaak **niet** bruikbaar zonder extra drivers (`fprintd`) | Niet onderdeel van het thema |
 | Suspend / fan | Standaard kernel/ACPI | Geen thema-specifieke instellingen |
 
@@ -1399,12 +1374,7 @@ Dit thema werkt op een **HP EliteBook x360** (2-in-1 business-laptop) zonder spe
 
 5. **Touchscreen reageert niet / alleen touchpad** — Controleer in Hyprland: `hyprctl devices` (touch-device zichtbaar?). Soms ontbreken firmware-pakketten (`linux-firmware`).
 
-6. **Verticaal / tablet-modus (vouw-laptop)** — Na `./install.sh` op Linux:
-   - **Rotatie:** klik 󰍹 in Waybar of druk **Super+Shift+R** (elke druk: 0° → 90° → 180° → 270°). Script: `~/.config/big-sur/scripts/rotate-display.sh` — herstart Waybar automatisch na rotatie (klikzones). Zie [Na rotatie klikken Waybar-knoppen niet](#na-rotatie-klikken-waybar-knoppen-niet).
-   - **Schermtoetsenbord:** klik 󰌌 in Waybar → `toggle-osk.sh` (wvkbd of onboard-fallback). AUR: `yay -S wvkbd-deskintl`; of `sudo pacman -S onboard` / `./install.sh -y`. Geen `systemctl enable wvkbd`.
-   - **Werkt niets:** `bash ~/.config/big-sur/scripts/diagnose-convertible.sh` — zie [Schermtoetsenbord / rotatie werkt niet](#schermtoetsenbord--rotatie-werkt-niet-waybar---).
-   - Draai je fysiek het scherm zonder knop: er is **geen** automatische rotatie; gebruik de Waybar-knop of sneltoets.
-   - Werkt rotatie niet terwijl `hyprctl` “ok” zegt: controleer of **kanshi/shikane** niet tegelijk je monitors beheert (die overschrijven `hyprctl keyword`). Zie [Hyprland monitors](https://wiki.hypr.land/Configuring/Monitors/).
+6. **Tablet-/vouwstand (schermtoetsenbord)** — Na `./install.sh` op Linux: klik 󰌌 in Waybar → `toggle-osk.sh` (wvkbd of onboard-fallback). AUR: `yay -S wvkbd-deskintl`; of `sudo pacman -S onboard` / `./install.sh -y`. Werkt niets? `bash ~/.config/big-sur/scripts/diagnose-convertible.sh` — zie [Schermtoetsenbord werkt niet](#schermtoetsenbord-werkt-niet-waybar-).
 
 7. **Helderheidstoetsen (Fn)** — Thema gebruikt `brightnessctl` (in `hypr/keybinds.conf`). Als toetsen niets doen: `brightnessctl info` en eventueel `brightnessctl --list`.
 
@@ -1417,18 +1387,16 @@ nmcli -t -f ACTIVE,SSID dev wifi
 bash ~/.config/big-sur/scripts/enable-bluetooth.sh
 bluetoothctl show
 hyprctl devices
-hyprctl monitors | grep -E '^Monitor|transform'
 bash ~/.config/big-sur/scripts/diagnose-convertible.sh
-bash ~/.config/big-sur/scripts/rotate-display.sh
 bash ~/.config/big-sur/scripts/toggle-osk.sh
 ~/.config/big-sur/scripts/start-waybar.sh
 ```
 
 Na wijzigingen aan `waybar/config.jsonc`: `pkill waybar && ~/.config/big-sur/scripts/start-waybar.sh`.
 
-### Schermtoetsenbord / rotatie werkt niet (Waybar 󰌌 / 󰍹)
+### Schermtoetsenbord werkt niet (Waybar 󰌌)
 
-**Symptoom:** Klik op het toetsenbord- of rotatie-icoon in Waybar doet niets; **Super+Shift+R** roteert niet; geen melding of OSK verschijnt niet.
+**Symptoom:** Klik op het toetsenbord-icoon in Waybar doet niets; geen melding of OSK verschijnt niet.
 
 **Eerste stap (toetsenbord):**
 
@@ -1443,13 +1411,10 @@ Geen regels in `osk.log` na een Waybar-klik → het script wordt niet aangeroepe
 
 | Oorzaak | Oplossing |
 |---------|-----------|
-| Scripts staan niet in Linux `~/.config` | Alleen `./install.sh` **in Hyprland** (niet alleen configs vanaf Windows kopiëren). Na `sync-to-linux-home.sh` worden scripts nu ook gekopieerd — anders ontbreken `toggle-osk.sh` / `rotate-display.sh`. |
+| Scripts staan niet in Linux `~/.config` | Alleen `./install.sh` **in Hyprland** (niet alleen configs vanaf Windows kopiëren). Na `sync-to-linux-home.sh` worden scripts nu ook gekopieerd — anders ontbreekt `toggle-osk.sh`. |
 | Scripts niet uitvoerbaar | `chmod +x ~/.config/big-sur/scripts/*.sh` of opnieuw `./install.sh -y` |
 | Waybar roept script niet aan | `on-click` moet `bash -lc '/usr/bin/bash "$HOME/.config/big-sur/scripts/toggle-osk.sh"'` zijn; daarna `pkill waybar` en `start-waybar.sh`. |
 | `wvkbd` niet geïnstalleerd | AUR: `yay -S wvkbd-deskintl`. Fallback: `sudo pacman -S onboard` (wordt door `install.sh` meegeïnstalleerd). |
-| Rotatie: `hyprctl` zegt ok maar scherm draait niet | Externe monitor-daemon (**kanshi** / **shikane**) overschrijft Hyprland — uitschakelen of rotatie daar configureren. |
-| Rotatie: verkeerde monitor | Script kiest `eDP-*` automatisch; controleer met `hyprctl monitors`. |
-| Na rotatie: bar ok maar knoppen op verkeerde plek | `./install.sh -y` (landscape/portrait configs + hard restart). Diagnose: `diagnose-convertible.sh`. Workaround: terug naar 0° of `hyprctl reload` + `pkill -9 waybar`. Zie [Na rotatie klikken Waybar-knoppen niet](#na-rotatie-klikken-waybar-knoppen-niet). |
 
 **Diagnose (op de laptop, in Hyprland-terminal):**
 
@@ -1464,8 +1429,6 @@ bash ~/.config/big-sur/scripts/test-osk.sh
 
 ```bash
 bash ~/.config/big-sur/scripts/toggle-osk.sh
-bash ~/.config/big-sur/scripts/rotate-display.sh
-hyprctl monitors | grep -E '^Monitor|transform'
 ```
 
 **Waybar herladen na config-wijziging:**
@@ -1476,49 +1439,6 @@ pkill waybar
 ```
 
 Waybar `custom/keyboard` gebruikt: `bash -lc '/usr/bin/bash "$HOME/.config/big-sur/scripts/toggle-osk.sh"'`.
-
-### Na rotatie klikken Waybar-knoppen niet
-
-**Symptoom:** Na schermrotatie (Waybar 󰍹 of **Super+Shift+R**) ziet de menubar er normaal uit, maar klikken op iconen werkt niet — of je moet op een andere plek klikken dan waar de knoppen zichtbaar zijn. De klikzones staan nog op de pre-rotatie-coördinaten.
-
-**Oorzaak:** Hyprland past de monitor-`transform` toe, maar Waybar herberekent input-regio's niet altijd mee. Dit is een bekende mismatch tussen compositor-transform en layer-shell hitboxes.
-
-**Oplossing (automatisch):** `rotate-display.sh` wacht op bevestigde transform, schakelt landscape/portrait Waybar-config, `hyprctl reload`, ~1,2s settle, `pkill -9 waybar`, en `start-waybar.sh`. Update op de laptop:
-
-```bash
-cd /pad/naar/big-sur-hyprland-theme
-./install.sh -y
-```
-
-Installeert ook `~/.config/waybar/config.landscape.jsonc` en `config.portrait.jsonc`.
-
-**Handmatig herstellen:**
-
-```bash
-~/.config/big-sur/scripts/start-waybar.sh
-# of hard kill + start:
-pkill -9 waybar; sleep 0.4; ~/.config/big-sur/scripts/start-waybar.sh
-hyprctl reload
-```
-
-**Hyprland 0.54+ workaround:** Als klikzones na rotatie nog steeds op de oude (landscape) plek liggen:
-
-1. Draai terug naar **0°** (󰍹 of **Super+Shift+R** tot “0° (normaal)”), of druk **Super+Shift+R** twee keer (360° = zelfde orientatie, wel Waybar-herstart).
-2. `hyprctl reload`, wacht een seconde, dan `pkill -9 waybar` en `start-waybar.sh`.
-3. Pas portrait-margins aan in `waybar/config.portrait.jsonc` (niet alleen `config.jsonc`).
-
-**Portrait (90° / 270°):** Houd `"position": "top"` en `"layer": "top"`. Margins staan in `config.portrait.jsonc` (`margin-top` 12, links/rechts 10).
-
-**Waybar `reload`-signaal:** `SIGUSR1`/`SIGUSR2` herlaadt alleen config, **niet** klikzones na rotatie. Gebruik volledige herstart (`start-waybar.sh` of rotatie opnieuw).
-
-**kanshi / shikane:** Als rotatie terugspringt of Waybar vreemd blijft, controleer of een monitor-daemon actief is:
-
-```bash
-pgrep -ax kanshi shikane
-bash ~/.config/big-sur/scripts/diagnose-convertible.sh
-```
-
-Schakel kanshi/shikane uit of configureer rotatie daar — anders overschrijven ze `hyprctl keyword monitor …,transform,…`.
 
 ### Schermtoetsenbord: `error target not found wvkbd`
 
@@ -1661,8 +1581,6 @@ Genereer alle bestanden volgens de projectstructuur:
 - hypr/keybinds.conf
 - hypr/windowrules.conf
 - waybar/config.jsonc
-- waybar/config.landscape.jsonc
-- waybar/config.portrait.jsonc
 - waybar/style.css
 - kitty/kitty.conf
 - kitty/big-sur.conf

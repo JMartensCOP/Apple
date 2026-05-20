@@ -20,12 +20,7 @@ if [ ! -f "$WAYBAR_CONFIG_DIR/config.jsonc" ] && [ ! -f "$WAYBAR_CONFIG_DIR/conf
   exit 1
 fi
 
-# Hard kill when invoked after display rotation (layer-shell input reset)
-if [ "${WAYBAR_HARD_KILL:-0}" = "1" ]; then
-  pkill -9 -x waybar 2>/dev/null || true
-else
-  pkill -x waybar 2>/dev/null || true
-fi
+pkill -x waybar 2>/dev/null || true
 sleep 0.35
 
 : >"$LOG_FILE"

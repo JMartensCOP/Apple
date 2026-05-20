@@ -1,6 +1,5 @@
 {
-  // Big Sur floating menubar (default = landscape). Portrait: config.portrait.jsonc
-  // rotate-display.sh copies landscape/portrait variant to config.jsonc + hard restart
+  // Big Sur floating menubar
   "layer": "top",
   "position": "top",
   "height": 36,
@@ -71,7 +70,6 @@
     "orientation": "horizontal",
     "modules": [
       "custom/keyboard",
-      "custom/rotate",
       "custom/restart",
       "custom/audio",
       "custom/wifi",
@@ -84,13 +82,6 @@
     "tooltip": true,
     "tooltip-format": "Schermtoetsenbord (wvkbd/onboard)\nKlik: aan/uit",
     "on-click": "bash -lc '/usr/bin/bash \"$HOME/.config/big-sur/scripts/toggle-osk.sh\"'"
-  },
-
-  "custom/rotate": {
-    "format": "󰍹",
-    "tooltip": true,
-    "tooltip-format": "Schermrotatie — 0° → 90° → 180° → 270°\nSuper+Shift+R · herstart Waybar na rotatie",
-    "on-click": "/usr/bin/bash \"$HOME/.config/big-sur/scripts/rotate-display.sh\""
   },
 
   "custom/restart": {

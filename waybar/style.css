@@ -115,7 +115,6 @@ window#waybar {
 }
 
 #quick #custom-keyboard,
-#quick #custom-rotate,
 #quick #custom-restart,
 #quick #custom-audio,
 #quick #custom-wifi,
@@ -130,7 +129,6 @@ window#waybar {
 }
 
 #quick #custom-keyboard:hover,
-#quick #custom-rotate:hover,
 #quick #custom-restart:hover,
 #quick #custom-audio:hover,
 #quick #custom-wifi:hover,
@@ -141,7 +139,6 @@ window#waybar {
 }
 
 #quick #custom-keyboard:active,
-#quick #custom-rotate:active,
 #quick #custom-restart:active,
 #quick #custom-audio:active,
 #quick #custom-wifi:active,

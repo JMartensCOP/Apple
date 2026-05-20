@@ -350,8 +350,6 @@ ARCH_PACKAGES=(
   code
   ttf-jetbrains-mono-nerd
   inter-font
-  wlr-randr
-  jq
   onboard
 )
 
@@ -401,8 +399,6 @@ backup_path "$CONFIG_DIR/hypr/hyprland.conf"
 backup_path "$CONFIG_DIR/hypr/hyprpaper.conf"
 backup_path "$CONFIG_DIR/hypr/hyprlock.conf"
 backup_path "$CONFIG_DIR/waybar/config.jsonc"
-backup_path "$CONFIG_DIR/waybar/config.landscape.jsonc"
-backup_path "$CONFIG_DIR/waybar/config.portrait.jsonc"
 backup_path "$CONFIG_DIR/waybar/style.css"
 backup_path "$CONFIG_DIR/kitty/kitty.conf"
 backup_path "$CONFIG_DIR/kitty/big-sur.conf"
@@ -420,8 +416,6 @@ setup_shell_profile
 
 cp "$PROJECT_DIR/hypr/"*.conf "$CONFIG_DIR/hypr/"
 cp "$PROJECT_DIR/waybar/config.jsonc" "$CONFIG_DIR/waybar/config.jsonc"
-cp "$PROJECT_DIR/waybar/config.landscape.jsonc" "$CONFIG_DIR/waybar/config.landscape.jsonc"
-cp "$PROJECT_DIR/waybar/config.portrait.jsonc" "$CONFIG_DIR/waybar/config.portrait.jsonc"
 cp "$PROJECT_DIR/waybar/style.css" "$CONFIG_DIR/waybar/style.css"
 cp "$PROJECT_DIR/kitty/kitty.conf" "$CONFIG_DIR/kitty/kitty.conf"
 cp "$PROJECT_DIR/kitty/big-sur.conf" "$CONFIG_DIR/kitty/big-sur.conf"
@@ -445,8 +439,6 @@ echo "  $WALLPAPER_DEST  (bron: assets/Background.jpg)"
 echo "  $LOCKSCREEN_DEST  (bron: assets/Lockscreen.jpg)"
 echo "  $CONFIG_DIR/hypr/hyprlock.conf"
 echo "  $CONFIG_DIR/waybar/config.jsonc"
-echo "  $CONFIG_DIR/waybar/config.landscape.jsonc"
-echo "  $CONFIG_DIR/waybar/config.portrait.jsonc"
 echo "  $CONFIG_DIR/waybar/style.css"
 echo "  $CONFIG_DIR/kitty/kitty.conf"
 echo "  $CONFIG_DIR/kitty/big-sur.conf"
@@ -476,5 +468,5 @@ echo ""
 echo "Bluetooth / BlueZ:"
 echo "  $CONFIG_DIR/big-sur/scripts/enable-bluetooth.sh"
 echo ""
-echo "Vouw-laptop (OSK / rotatie):"
+echo "Vouw-laptop (schermtoetsenbord):"
 echo "  bash \"$CONFIG_DIR/big-sur/scripts/diagnose-convertible.sh\""
