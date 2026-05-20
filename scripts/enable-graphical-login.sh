@@ -2,7 +2,9 @@
 # Install and enable SDDM for graphical login → Hyprland (no manual TTY login).
 set -euo pipefail
 
-SDDM_PACKAGES=(sddm qt6-ct)
+SDDM_REQUIRED=(sddm)
+# Qt6 theme/config tool — optional; SDDM works without it (Arch: extra/qt6ct, not qt6-ct)
+SDDM_OPTIONAL=(qt6ct)
 HYPRLAND_SESSION="/usr/share/wayland-sessions/hyprland.desktop"
 
 is_windows_shell() {
@@ -78,13 +80,23 @@ fi
 
 if ! command -v sudo >/dev/null 2>&1; then
   echo "enable-graphical-login: sudo vereist. Als root:"
-  echo "  pacman -S --needed ${SDDM_PACKAGES[*]}"
+  echo "  pacman -S --needed ${SDDM_REQUIRED[*]}"
+  echo "  pacman -S --needed ${SDDM_OPTIONAL[*]}   # optioneel (Qt6-thema)"
   echo "  systemctl enable --now sddm.service"
   exit 1
 fi
 
-echo "enable-graphical-login: installeer ${SDDM_PACKAGES[*]}..."
-sudo pacman -S --needed "${SDDM_PACKAGES[@]}"
+echo "enable-graphical-login: installeer ${SDDM_REQUIRED[*]}..."
+sudo pacman -S --needed "${SDDM_REQUIRED[@]}"
+
+for pkg in "${SDDM_OPTIONAL[@]}"; do
+  echo "enable-graphical-login: optioneel — ${pkg} (SDDM werkt ook zonder)..."
+  if sudo pacman -S --needed "$pkg"; then
+    :
+  else
+    echo "enable-graphical-login: ${pkg} overgeslagen (optioneel)."
+  fi
+done
 
 if ! command -v Hyprland >/dev/null 2>&1 && ! command -v hyprland >/dev/null 2>&1; then
   echo "enable-graphical-login: WAARSCHUWING — hyprland lijkt niet geïnstalleerd."

@@ -892,7 +892,7 @@ Wordt automatisch aangeroepen door `install.sh` op Linux.
 
 ### `scripts/enable-graphical-login.sh`
 
-Installeert **SDDM** + `qt6-ct` op Arch, maakt basis `/etc/sddm.conf.d/`, schakelt `sddm.service` in. SDDM toont **Hyprland** als `/usr/share/wayland-sessions/hyprland.desktop` bestaat (pakket `hyprland`).
+Installeert **SDDM** op Arch (optioneel **qt6ct** voor Qt6-thema), maakt basis `/etc/sddm.conf.d/`, schakelt `sddm.service` in. SDDM toont **Hyprland** als `/usr/share/wayland-sessions/hyprland.desktop` bestaat (pakket `hyprland`).
 
 ```bash
 ./scripts/enable-graphical-login.sh
@@ -968,7 +968,8 @@ Kies op het SDDM-scherm sessie **Hyprland**. Hyprlock start daarna via `start-se
 Handmatig (zelfde als het script):
 
 ```bash
-sudo pacman -S --needed sddm qt6-ct hyprland
+sudo pacman -S --needed sddm hyprland
+sudo pacman -S --needed qt6ct   # optioneel — Qt6-thema; niet qt6-ct
 sudo systemctl enable --now sddm.service
 ls /usr/share/wayland-sessions/hyprland.desktop   # moet bestaan
 sudo reboot
@@ -1289,6 +1290,27 @@ bash ~/.config/big-sur/scripts/toggle-osk.sh
 ```
 
 Gebruik **niet** `systemctl enable wvkbd` — er is geen `wvkbd.service` op Arch.
+
+### SDDM / grafisch inloggen: `error target not found qt6-ct`
+
+**Symptoom:** `error: target not found: qt6-ct` tijdens `./install.sh --with-sddm` of `./scripts/enable-graphical-login.sh`.
+
+**Oorzaak:** Het pakket heet op Arch **`qt6ct`** (zonder streepje), repository **extra** — niet `qt6-ct`. SDDM zelf heeft **qt6ct niet nodig**; het is alleen een optionele Qt6-configuratietool.
+
+**Oplossing:**
+
+```bash
+# Vereist voor grafisch inloggen:
+sudo pacman -S --needed sddm hyprland
+sudo systemctl enable --now sddm.service
+
+# Optioneel (Qt6-thema voor SDDM-greeter):
+sudo pacman -S --needed qt6ct
+
+# Of opnieuw via het script (installeert sddm; qt6ct faalt niet de rest):
+./scripts/enable-graphical-login.sh -y
+sudo reboot
+```
 
 ### Geen Geluid / Waybar Volume Werkt Niet
 
