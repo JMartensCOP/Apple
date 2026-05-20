@@ -15,7 +15,7 @@
 
   "group/launchers": {
     "orientation": "horizontal",
-    "modules": ["custom/terminal", "custom/browser", "custom/files", "custom/code"]
+    "modules": ["custom/terminal", "custom/browser", "custom/files", "custom/code", "custom/spotify"]
   },
 
   "custom/terminal": {
@@ -44,6 +44,13 @@
     "tooltip": true,
     "tooltip-format": "Visual Studio Code — Super+Shift+C",
     "on-click": "bash \"$HOME/.config/big-sur/scripts/launch-code.sh\""
+  },
+
+  "custom/spotify": {
+    "format": "󰓇",
+    "tooltip": true,
+    "tooltip-format": "Spotify — Super+Shift+S",
+    "on-click": "bash -lc '/usr/bin/bash \"$HOME/.config/big-sur/scripts/launch-spotify.sh\"'"
   },
 
   "hyprland/workspaces": {

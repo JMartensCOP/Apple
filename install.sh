@@ -209,6 +209,55 @@ install_osk_optional() {
   echo "Log bij klik: ~/.cache/big-sur/osk.log"
 }
 
+install_spotify_optional() {
+  if is_windows_shell || ! is_linux; then
+    return 0
+  fi
+
+  if command -v spotify >/dev/null 2>&1 || command -v spotify-launcher >/dev/null 2>&1; then
+    echo "Spotify: binary gevonden."
+    return 0
+  fi
+
+  local aur_helper=""
+  local aur_flags=(--needed)
+  if command -v yay >/dev/null 2>&1; then
+    aur_helper=yay
+  elif command -v paru >/dev/null 2>&1; then
+    aur_helper=paru
+  fi
+
+  if [ -n "$aur_helper" ]; then
+    echo ""
+    echo "=== Spotify (AUR) ==="
+    if $FORCE; then
+      aur_flags+=(--noconfirm)
+    fi
+    echo "Probeer spotify te installeren met $aur_helper..."
+    if $aur_helper -S "${aur_flags[@]}" spotify; then
+      if command -v spotify >/dev/null 2>&1 || command -v spotify-launcher >/dev/null 2>&1; then
+        echo "Spotify geïnstalleerd."
+        return 0
+      fi
+    else
+      echo "$aur_helper installatie mislukt of geannuleerd."
+    fi
+  fi
+
+  echo ""
+  echo "=== Spotify ==="
+  echo "Spotify staat niet in de officiële Arch-repositories (alleen AUR)."
+  echo "Waybar 󰓇 en Super+Shift+S gebruiken: bash \"$PROJECT_DIR/scripts/launch-spotify.sh\""
+  echo ""
+  if [ -n "$aur_helper" ]; then
+    echo "Installeer handmatig: $aur_helper -S spotify"
+    echo "Alternatief: $aur_helper -S spotify-launcher"
+  else
+    echo "Installeer yay of paru, daarna: yay -S spotify"
+    echo "Of: yay -S spotify-launcher"
+  fi
+}
+
 enable_audio_services() {
   local script="$PROJECT_DIR/scripts/enable-audio.sh"
 
@@ -373,6 +422,7 @@ confirm_target_if_needed
 
 install_dependencies
 install_osk_optional
+install_spotify_optional
 enable_audio_services
 enable_network_services
 enable_bluetooth_services

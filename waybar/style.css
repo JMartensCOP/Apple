@@ -37,7 +37,8 @@ window#waybar {
 #launchers #custom-terminal,
 #launchers #custom-browser,
 #launchers #custom-files,
-#launchers #custom-code {
+#launchers #custom-code,
+#launchers #custom-spotify {
   color: #d8dee9;
   font-size: 15px;
   padding: 0 11px;
@@ -50,7 +51,8 @@ window#waybar {
 #launchers #custom-terminal:hover,
 #launchers #custom-browser:hover,
 #launchers #custom-files:hover,
-#launchers #custom-code:hover {
+#launchers #custom-code:hover,
+#launchers #custom-spotify:hover {
   color: #f5f7fa;
   background: rgba(103, 199, 232, 0.20);
   box-shadow: 0 0 12px rgba(103, 199, 232, 0.15);
@@ -59,7 +61,8 @@ window#waybar {
 #launchers #custom-terminal:active,
 #launchers #custom-browser:active,
 #launchers #custom-files:active,
-#launchers #custom-code:active {
+#launchers #custom-code:active,
+#launchers #custom-spotify:active {
   background: rgba(180, 108, 255, 0.28);
   color: #f5f7fa;
 }

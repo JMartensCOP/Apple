@@ -163,6 +163,8 @@ big-sur-hyprland-theme/
     ├── toggle-osk.sh
     ├── test-osk.sh
     ├── diagnose-convertible.sh
+    ├── launch-code.sh
+    ├── launch-spotify.sh
     ├── backup-configs.sh
     ├── enable-audio.sh
     ├── enable-network.sh
@@ -282,7 +284,7 @@ Rechts vóór de status-pill: `group/quick` met klikbare custom-modules:
 
 `install.sh` kopieert alle scripts naar `~/.config/big-sur/scripts/`. Bij handmatige installatie: zelfde map aanmaken en `scripts/*.sh` daarheen kopiëren (`chmod +x`).
 
-Links in de menubar: `group/launchers` met vier klikbare custom-modules (Nerd Font-iconen) die dezelfde apps starten als de Hyprland-keybinds:
+Links in de menubar: `group/launchers` met vijf klikbare custom-modules (Nerd Font-iconen) die dezelfde apps starten als de Hyprland-keybinds:
 
 | Module | Icoon | `on-click` | Keybind |
 |--------|-------|------------|---------|
@@ -290,6 +292,7 @@ Links in de menubar: `group/launchers` met vier klikbare custom-modules (Nerd Fo
 | `custom/browser` | 󰖟 | `firefox` | Super+B |
 | `custom/files` | 󰝰 | `dolphin` | Super+E |
 | `custom/code` | 󰨞 | `launch-code.sh` | Super+Shift+C |
+| `custom/spotify` | 󰓇 | `launch-spotify.sh` | Super+Shift+S |
 
 ### Waybar CSS Richting
 
@@ -455,6 +458,14 @@ yay -S wvkbd-deskintl    # aanbevolen op vouw-/touchscherm (HP EliteBook x360)
 yay -S wvkbd             # mobintl layout → binary wvkbd-mobintl
 ```
 
+**Spotify:** staat **niet** in de officiële Arch-repositories — alleen [AUR](https://aur.archlinux.org/packages/spotify) (`spotify` of `spotify-launcher`). `install.sh` probeert `yay -S spotify` / `paru -S spotify` als een AUR-helper aanwezig is (`-y` voor non-interactief). Waybar 󰓇 en **Super+Shift+S** starten via `scripts/launch-spotify.sh`.
+
+```bash
+yay -S spotify           # officiële Spotify-client (binary: spotify)
+# of:
+yay -S spotify-launcher  # alternatieve launcher (binary: spotify-launcher)
+```
+
 Voor Arch (officiële repos):
 
 ```bash
@@ -473,7 +484,7 @@ Op Windows/Git Bash worden pakketten en systemd overgeslagen; voer `./install.sh
 
 **Bluetooth (Arch):** `bluez` levert `bluetoothd`; `bluez-utils` levert `bluetoothctl`; `blueman` is de GUI. `install.sh` schakelt de stack in via `scripts/enable-bluetooth.sh` (`systemctl enable --now bluetooth`, `rfkill unblock bluetooth`, adapter aan).
 
-Firefox staat in de officiële Arch-repositories (`firefox`). Visual Studio Code heet op Arch **`code`** (open-source build in `extra`; volledige Visual Studio IDE is alleen Windows/macOS). `install.sh` installeert beide samen met de overige pakketten. Waybar en **Super+Shift+C** starten VS Code via `scripts/launch-code.sh` (fallback: `code-oss`, `codium`). Voor een andere browser pas je `$browser` in `hypr/keybinds.conf` en `custom/browser` in `waybar/config.jsonc` aan. Voor een andere editor pas je `$editor`, `launch-code.sh` en `custom/code` aan.
+Firefox staat in de officiële Arch-repositories (`firefox`). Visual Studio Code heet op Arch **`code`** (open-source build in `extra`; volledige Visual Studio IDE is alleen Windows/macOS). `install.sh` installeert beide samen met de overige pakketten. Waybar en **Super+Shift+C** starten VS Code via `scripts/launch-code.sh` (fallback: `code-oss`, `codium`). Spotify is **AUR-only** — zie hierboven; Waybar 󰓇 en **Super+Shift+S** via `scripts/launch-spotify.sh`. Voor een andere browser pas je `$browser` in `hypr/keybinds.conf` en `custom/browser` in `waybar/config.jsonc` aan. Voor een andere editor pas je `$editor`, `launch-code.sh` en `custom/code` aan.
 
 Als pakketten niet bestaan op de distro van de gebruiker, moet de README uitleggen dat de gebruiker distro-specifieke pakketnamen moet gebruiken.
 
@@ -630,6 +641,7 @@ $terminal = kitty
 $fileManager = dolphin
 $browser = firefox
 $editor = bash "$HOME/.config/big-sur/scripts/launch-code.sh"
+$spotify = bash "$HOME/.config/big-sur/scripts/launch-spotify.sh"
 $menu = rofi -show drun -theme ~/.config/rofi/big-sur.rasi
 
 bind = $mainMod, T, exec, $terminal
@@ -638,6 +650,7 @@ bind = $mainMod, M, exit
 bind = $mainMod, E, exec, $fileManager
 bind = $mainMod, B, exec, $browser
 bind = $mainMod SHIFT, C, exec, $editor
+bind = $mainMod SHIFT, S, exec, $spotify
 bind = $mainMod, Space, exec, $menu
 bind = $mainMod, L, exec, hyprlock
 bind = $mainMod, V, togglefloating
@@ -867,6 +880,16 @@ bash ~/.config/big-sur/scripts/launch-code.sh
 ```
 
 Als geen editor gevonden wordt: desktopmelding (indien `notify-send` beschikbaar) en fout op stderr.
+
+### `scripts/launch-spotify.sh`
+
+Start **Spotify** met fallback: `spotify` (AUR-pakket `spotify`) of `spotify-launcher`. Waybar-knop `custom/spotify` (󰓇) en sneltoets **Super+Shift+S** gebruiken dit script.
+
+```bash
+bash ~/.config/big-sur/scripts/launch-spotify.sh
+```
+
+Als geen client gevonden wordt: desktopmelding en AUR-hint (`yay -S spotify`).
 
 ### `scripts/reload-theme.sh`
 
