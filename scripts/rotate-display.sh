@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # Cycle primary display rotation: 0° → 90° → 180° → 270° (Hyprland transform 0–3)
+# After transform: restart Waybar so click targets match the bar (Hyprland transform mismatch).
 set -uo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 STATE_DIR="${XDG_STATE_HOME:-$HOME/.cache}/big-sur"
 STATE_FILE="$STATE_DIR/display-rotation"
 mkdir -p "$STATE_DIR"
@@ -79,6 +81,36 @@ current_transform_hypr() {
 hyprctl_ok() {
   local out="$1"
   [ -n "$out" ] && [[ "$out" != *"error"* ]] && [[ "$out" == *"ok"* ]]
+}
+
+# kanshi/shikane overschrijven hyprctl keyword monitor — rotatie lijkt ok maar springt terug
+kanshi_conflict() {
+  pgrep -x kanshi >/dev/null 2>&1 || pgrep -x shikane >/dev/null 2>&1
+}
+
+# SIGUSR1/2 "reload" herlaadt config, niet input-regio's na monitor-transform — volledige herstart.
+restart_waybar() {
+  local start_script=""
+
+  for candidate in \
+    "$SCRIPT_DIR/start-waybar.sh" \
+    "${XDG_CONFIG_HOME:-$HOME/.config}/big-sur/scripts/start-waybar.sh"; do
+    if [ -x "$candidate" ]; then
+      start_script="$candidate"
+      break
+    fi
+  done
+
+  # Korte pauze: compositor moet transform/layout afronden vóór Waybar opnieuw positioneert
+  sleep 0.35
+
+  if [ -n "$start_script" ]; then
+    "$start_script" >/dev/null 2>&1 || true
+  elif command -v waybar >/dev/null 2>&1; then
+    pkill -x waybar 2>/dev/null || true
+    sleep 0.25
+    nohup waybar >/dev/null 2>&1 &
+  fi
 }
 
 # Hyprland 0.54+: probeer transform-only, dan volledige monitor-regel (regressie-workaround)
@@ -168,4 +200,16 @@ else
 fi
 
 write_state "$NEXT"
-notify-send "Schermrotatie" "${MONITOR}: ${LABELS[$NEXT]}" 2>/dev/null || true
+restart_waybar
+
+MSG="${MONITOR}: ${LABELS[$NEXT]}"
+MSG="$MSG\nWaybar herstart (klikzones gesynchroniseerd)."
+case "$NEXT" in
+  1 | 3)
+    MSG="$MSG\nPortrait: pas eventueel margin-top/left/right in waybar/config.jsonc aan."
+    ;;
+esac
+if kanshi_conflict; then
+  MSG="$MSG\nWaarschuwing: kanshi/shikane actief — kan rotatie overschrijven."
+fi
+notify-send "Schermrotatie" "$MSG" 2>/dev/null || true

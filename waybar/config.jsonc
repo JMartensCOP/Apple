@@ -1,5 +1,7 @@
 {
   // Big Sur floating menubar — dock left, workspaces center, status right
+  // position/layer: always "top" (also in portrait). rotate-display.sh restarts
+  // Waybar after transform so click targets match; adjust margins below if needed.
   "layer": "top",
   "position": "top",
   "height": 36,
@@ -81,14 +83,14 @@
   "custom/keyboard": {
     "format": "󰌌",
     "tooltip": true,
-    "tooltip-format": "Schermtoetsenbord (wvkbd)\nKlik: aan/uit",
-    "on-click": "/usr/bin/bash \"$HOME/.config/big-sur/scripts/toggle-osk.sh\""
+    "tooltip-format": "Schermtoetsenbord (wvkbd/onboard)\nKlik: aan/uit",
+    "on-click": "bash -lc '/usr/bin/bash \"$HOME/.config/big-sur/scripts/toggle-osk.sh\"'"
   },
 
   "custom/rotate": {
     "format": "󰍹",
     "tooltip": true,
-    "tooltip-format": "Schermrotatie — 0° → 90° → 180° → 270°\nSuper+Shift+R",
+    "tooltip-format": "Schermrotatie — 0° → 90° → 180° → 270°\nSuper+Shift+R · herstart Waybar na rotatie",
     "on-click": "/usr/bin/bash \"$HOME/.config/big-sur/scripts/rotate-display.sh\""
   },
 

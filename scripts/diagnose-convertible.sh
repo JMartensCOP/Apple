@@ -31,8 +31,13 @@ if [ -f "$WAYBAR_CFG" ]; then
   if grep -q 'big-sur/scripts/toggle-osk.sh' "$WAYBAR_CFG" 2>/dev/null \
     && grep -q 'big-sur/scripts/rotate-display.sh' "$WAYBAR_CFG" 2>/dev/null; then
     echo "  OK  config.jsonc verwijst naar big-sur/scripts/*.sh"
+    if grep -q 'bash -lc.*toggle-osk' "$WAYBAR_CFG" 2>/dev/null; then
+      echo "  OK  keyboard on-click gebruikt bash -lc (HOME-expansie)"
+    else
+      echo "  WAARSCHUWING: keyboard on-click zonder bash -lc — update waybar/config.jsonc"
+    fi
   else
-    echo "  WAARSCHUWING: waybar/config.jsonc mist bash-paden naar toggle-osk / rotate-display"
+    echo "  WAARSCHUWING: waybar/config.jsonc mist paden naar toggle-osk / rotate-display"
     echo "    Herinstalleer: ./install.sh -y"
   fi
 else
@@ -55,6 +60,16 @@ if [ "$found" -eq 0 ]; then
 fi
 if pgrep -x wvkbd-deskintl >/dev/null 2>&1 || pgrep -x wvkbd-mobintl >/dev/null 2>&1 || pgrep -x onboard >/dev/null 2>&1; then
   echo "  Proces actief: $(pgrep -ax 'wvkbd-deskintl|wvkbd-mobintl|onboard' 2>/dev/null || true)"
+fi
+OSK_LOG="${XDG_CACHE_HOME:-$HOME/.cache}/big-sur/osk.log"
+if [ -f "$OSK_LOG" ]; then
+  echo "  Log (laatste 3 regels): $OSK_LOG"
+  tail -n 3 "$OSK_LOG" | sed 's/^/    /'
+else
+  echo "  Log: $OSK_LOG (nog leeg — klik 󰌌 of run test-osk.sh)"
+fi
+if [ -x "$SCRIPTS/test-osk.sh" ]; then
+  echo "  Test: bash \"$SCRIPTS/test-osk.sh\""
 fi
 echo ""
 
@@ -89,6 +104,6 @@ fi
 if [ -x "$SCRIPTS/toggle-osk.sh" ]; then
   echo "  bash \"$SCRIPTS/toggle-osk.sh\""
 fi
-echo "  Waybar herladen: pkill waybar; \"$SCRIPTS/start-waybar.sh\" 2>/dev/null || waybar &"
+  echo "  Waybar herladen: \"$SCRIPTS/start-waybar.sh\" (rotate-display.sh doet dit automatisch na rotatie)"
 echo ""
 echo "Klaar."

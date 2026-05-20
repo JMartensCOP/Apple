@@ -169,23 +169,44 @@ install_osk_optional() {
     return 0
   fi
 
+  if command -v yay >/dev/null 2>&1; then
+    echo ""
+    echo "=== Schermtoetsenbord (wvkbd via AUR) ==="
+    echo "Probeer wvkbd-deskintl te installeren met yay..."
+    if yay -S --needed --noconfirm wvkbd-deskintl; then
+      if command -v wvkbd-deskintl >/dev/null 2>&1; then
+        echo "Schermtoetsenbord: wvkbd-deskintl geïnstalleerd."
+        return 0
+      fi
+    else
+      echo "yay installatie mislukt — onboard (pacman) blijft fallback."
+    fi
+  fi
+
   if command -v onboard >/dev/null 2>&1; then
-    echo "Schermtoetsenbord: onboard (pacman-fallback) gevonden — Waybar 󰌌 werkt."
-    echo "  Voor Wayland-OSK: yay -S wvkbd-deskintl"
+    echo "Schermtoetsenbord: onboard (pacman-fallback) — Waybar 󰌌 werkt."
+    if ! command -v yay >/dev/null 2>&1; then
+      echo "  Voor native Wayland-OSK: installeer yay en run: yay -S wvkbd-deskintl"
+    fi
     return 0
   fi
 
   echo ""
   echo "=== Schermtoetsenbord (wvkbd) ==="
   echo "wvkbd staat niet in de officiële Arch-repositories (alleen AUR)."
-  echo "Fallback onboard wordt door install.sh uit pacman geïnstalleerd."
+  echo "Fallback onboard hoort via pacman geïnstalleerd te zijn (install.sh)."
   echo "Geen systemd-service — start via Waybar 󰌌 of:"
   echo "  bash \"$PROJECT_DIR/scripts/toggle-osk.sh\""
+  echo "  bash \"$PROJECT_DIR/scripts/test-osk.sh\""
   echo ""
-  echo "Installeer handmatig met yay/paru (één layout volstaat):"
-  echo "  yay -S wvkbd-deskintl    # aanbevolen op vouw-/touchscherm"
-  echo "  yay -S wvkbd             # mobintl layout"
+  if command -v yay >/dev/null 2>&1; then
+    echo "Installeer handmatig: yay -S wvkbd-deskintl"
+  else
+    echo "Installeer yay, daarna: yay -S wvkbd-deskintl"
+    echo "Of alleen onboard: sudo pacman -S onboard"
+  fi
   echo "Diagnose: bash \"$PROJECT_DIR/scripts/diagnose-convertible.sh\""
+  echo "Log bij klik: ~/.cache/big-sur/osk.log"
 }
 
 enable_audio_services() {
