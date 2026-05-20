@@ -206,7 +206,7 @@ Waybar voelt als een **zwevende Big Sur menubar** (36px hoog, 8px top-margin, af
 - rustige spacing en hover-transities;
 - actieve workspace met cyaan/paarse gradient;
 - waarschuwingen in Big Sur-rood;
-- icon-only statusmodules met tooltips (volume, netwerk, batterij).
+- icon-only statusmodules met tooltips (volume, netwerk); batterij toont icoon **en** percentage (`{icon} {capacity}%`).
 
 ### Layout
 
@@ -249,7 +249,7 @@ Links in de menubar: `group/launchers` met drie klikbare custom-modules (Nerd Fo
 | Module | Icoon | `on-click` | Keybind |
 |--------|-------|------------|---------|
 | `custom/terminal` | 󰆍 | `kitty` | Super+T |
-| `custom/browser` | 󰖟 | `opera-gx` | Super+B |
+| `custom/browser` | 󰖟 | `firefox` | Super+B |
 | `custom/files` | 󰝰 | `dolphin` | Super+E |
 
 ### Waybar CSS Richting
@@ -385,12 +385,17 @@ slurp
 brightnessctl
 playerctl
 pavucontrol
+pipewire
+pipewire-pulse
+pipewire-alsa
+wireplumber
 networkmanager
 network-manager-applet
 bluez
 blueman
+upower
 dolphin
-opera-gx (AUR; zie hieronder)
+firefox
 ttf-jetbrains-mono-nerd
 inter-font
 ```
@@ -398,16 +403,20 @@ inter-font
 Voor Arch:
 
 ```bash
-sudo pacman -S hyprland waybar kitty hyprpaper rofi-wayland dunst wl-clipboard grim slurp brightnessctl playerctl pavucontrol networkmanager network-manager-applet bluez blueman dolphin ttf-jetbrains-mono-nerd inter-font
+sudo pacman -S hyprland waybar kitty hyprpaper rofi-wayland dunst wl-clipboard grim slurp brightnessctl playerctl pavucontrol pipewire pipewire-pulse pipewire-alsa wireplumber networkmanager network-manager-applet bluez blueman upower dolphin firefox ttf-jetbrains-mono-nerd inter-font
 ```
 
-Opera GX staat niet in de officiele Arch-repositories. `install.sh` probeert het via pacman te installeren als het daar beschikbaar is; anders vraagt het script om installatie via `yay` of `paru` (AUR-pakket `opera-gx`). Als fallback kan `opera` uit de officiële repos worden geinstalleerd — pas dan `$browser` aan naar `opera` in `hypr/keybinds.conf`.
+**Audio (Arch):** gebruik **PipeWire** met `pipewire-pulse` (PulseAudio-compatibiliteit voor Waybar `pulseaudio`-module en `pavucontrol`). Het legacy `pulseaudio`-pakket is niet nodig. `install.sh` installeert de PipeWire-pakketten en schakelt de officiële user-units in via `scripts/enable-audio.sh`:
 
-```bash
-yay -S opera-gx
-# of
-paru -S opera-gx
+```text
+pipewire.service
+pipewire-pulse.service
+wireplumber.service
 ```
+
+Op Windows/Git Bash worden pakketten en systemd overgeslagen; voer `./install.sh` opnieuw uit in je Hyprland-sessie op Linux.
+
+Firefox staat in de officiële Arch-repositories (`firefox`). `install.sh` installeert het samen met de overige pakketten. Voor een andere browser pas je `$browser` in `hypr/keybinds.conf` en `custom/browser` in `waybar/config.jsonc` aan.
 
 Als pakketten niet bestaan op de distro van de gebruiker, moet de README uitleggen dat de gebruiker distro-specifieke pakketnamen moet gebruiken.
 
@@ -562,7 +571,7 @@ Aanbevolen keybinds:
 $mainMod = SUPER
 $terminal = kitty
 $fileManager = dolphin
-$browser = opera-gx
+$browser = firefox
 $menu = rofi -show drun -theme ~/.config/rofi/big-sur.rasi
 
 bind = $mainMod, T, exec, $terminal
@@ -741,6 +750,14 @@ swww img "$WALLPAPER" --transition-type grow --transition-duration 1
 ### `scripts/start-waybar.sh`
 
 Start Waybar veilig: controleert binary en `~/.config/waybar/config.jsonc`, stopt oude instanties, logt naar `~/.cache/big-sur/waybar.log`.
+
+### `scripts/enable-audio.sh`
+
+Schakelt de stock Arch **PipeWire** user-services in en start ze (`pipewire`, `pipewire-pulse`, `wireplumber`). Wordt automatisch aangeroepen door `install.sh` op Linux met een actieve systemd user-sessie. Handmatig:
+
+```bash
+bash ~/.config/big-sur/scripts/enable-audio.sh
+```
 
 ### `scripts/reload-theme.sh`
 
@@ -944,6 +961,99 @@ Daarna Waybar opnieuw starten:
 pkill waybar
 waybar &
 ```
+
+### Batterij Toont Geen Percentage
+
+In `waybar/config.jsonc` gebruikt de `battery`-module `{icon} {capacity}%` (niet alleen het icoon). Na wijziging:
+
+```bash
+pkill waybar && ~/.config/big-sur/scripts/start-waybar.sh
+```
+
+Tooltip toont ook `{capacity}%` en resterende tijd (`{time}`). Waarschuwing/kritiek via `states` (30% / 15%) en CSS `#battery.warning` / `#battery.critical`.
+
+Installeer **upower** (staat in `install.sh`); zonder dit pakket kan Waybar soms 0% of een leeg icoon tonen op laptops:
+
+```bash
+sudo pacman -S upower
+upower -i /org/freedesktop/UPower/devices/battery_BAT0
+```
+
+Controleer welke batterij-naam je systeem gebruikt:
+
+```bash
+ls /sys/class/power_supply/
+```
+
+Staat er `BAT1` in plaats van `BAT0`, pas dan in `waybar/config.jsonc` aan: `"bat": "BAT1"`.
+
+### HP EliteBook x360 / convertible laptops
+
+Dit thema werkt op een **HP EliteBook x360** (2-in-1 business-laptop) zonder speciale aanpassingen voor het merk. De meeste problemen komen **niet** door HP/Hyprland-incompatibiliteit, maar door ontbrekende pakketten, verkeerde installatiepad (Windows vs Linux `~/.config`), of laptop-specifieke randzaken hieronder.
+
+| Onderdeel | Op EliteBook x360 | In dit thema |
+|-----------|-------------------|--------------|
+| Grafiek | Meestal **Intel** (geen NVIDIA-driver-gedoe) | Geen GPU-specifieke config nodig |
+| WiFi | Vaak **Intel** (`iwlwifi`); soms Realtek op oudere modellen | NetworkManager + `nm-connection-editor` (Waybar wifi-knop) |
+| Bluetooth | Standaard met **BlueZ** | `bluez` + `blueman` + Waybar bluetooth-knop |
+| Batterij | Eén interne batterij (`BAT0`); zelden twee | Waybar `battery` met `"bat": "BAT0"` + pakket **upower** |
+| Touchpad | Werkt via Hyprland `input { touchpad { ... } }` | `natural_scroll`, `tap-to-click` in `hypr/hyprland.conf` |
+| Touchscreen | Vaak Wacom/ELAN; werkt vaak out-of-the-box als pointer | Geen aparte tablet-modus in Hyprland-config |
+| Auto-rotate (tablet) | **Niet** ingebouwd in dit thema | Optioneel: `iio-sensor-proxy` + `monitor`/`hyprctl` handmatig |
+| Vingerafdruk | Vaak **niet** bruikbaar zonder extra drivers (`fprintd`) | Niet onderdeel van het thema |
+| Suspend / fan | Standaard kernel/ACPI | Geen thema-specifieke instellingen |
+
+**Veelvoorkomende klachten op deze laptop:**
+
+1. **Waybar ontbreekt helemaal** — Meestal configs in `C:\Users\...\.config` i.p.v. Linux `/home/<user>/.config`. Oplossing: `./install.sh` **in je Hyprland-sessie** of `sync-to-linux-home.sh` (zie [Configs Verschijnen Niet](#configs-verschijnen-niet-in-je-hyprland-sessie)).
+
+2. **Leeg batterij-icoon of 0%** — Installeer `upower`, controleer `BAT0` vs `BAT1`, herstart Waybar. Soms helpt `systemctl enable --now upower` (user-service niet altijd nodig; daemon draait system-wide).
+
+3. **WiFi werkt, maar icoon blijft “los”** — Klik op het wifi-icoon → `nm-connection-editor`; controleer `nmcli device wifi list` en of NetworkManager actief is: `systemctl status NetworkManager`.
+
+4. **Touchscreen reageert niet / alleen touchpad** — Controleer in Hyprland: `hyprctl devices` (touch-device zichtbaar?). Soms ontbreken firmware-pakketten (`linux-firmware`). Rotatie: dit thema configureert geen auto-rotate; voor tablet-modus zoek je distro-docs over `iio-sensor-proxy` en `wlr-randr`/`hyprctl keyword monitor`.
+
+5. **Helderheidstoetsen (Fn)** — Thema gebruikt `brightnessctl` (in `hypr/keybinds.conf`). Als toetsen niets doen: `brightnessctl info` en eventueel `brightnessctl --list`.
+
+**Snelle diagnose op de EliteBook (in Hyprland-terminal):**
+
+```bash
+ls /sys/class/power_supply/
+upower -e | grep -i bat
+nmcli -t -f ACTIVE,SSID dev wifi
+bluetoothctl show
+hyprctl devices
+~/.config/big-sur/scripts/start-waybar.sh
+```
+
+Na wijzigingen aan `waybar/config.jsonc`: `pkill waybar && ~/.config/big-sur/scripts/start-waybar.sh`.
+
+### Geen Geluid / Waybar Volume Werkt Niet
+
+Arch gebruikt PipeWire; Waybar blijft de module-naam `pulseaudio` gebruiken (compat via `pipewire-pulse`).
+
+1. Installeer pakketten (of `./install.sh` op Linux):
+
+```bash
+sudo pacman -S --needed pipewire pipewire-pulse pipewire-alsa wireplumber pavucontrol
+```
+
+2. Schakel user-services in:
+
+```bash
+systemctl --user enable --now pipewire.service pipewire-pulse.service wireplumber.service
+# of:
+bash ~/.config/big-sur/scripts/enable-audio.sh
+```
+
+3. Controleer:
+
+```bash
+wpctl status
+pactl info   # Server Name: PulseAudio (on PipeWire ...)
+```
+
+4. Herstart Waybar na installatie.
 
 ### Hyprland Config Geeft Fouten
 

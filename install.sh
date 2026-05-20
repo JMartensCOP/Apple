@@ -124,105 +124,6 @@ confirm_target_if_needed() {
   fi
 }
 
-install_opera_gx() {
-  if command -v opera-gx >/dev/null 2>&1; then
-    echo "Opera GX is al geinstalleerd."
-    return 0
-  fi
-
-  if ! command -v pacman >/dev/null 2>&1; then
-    echo "Opera GX niet geinstalleerd (pacman niet beschikbaar)."
-    echo "Installeer opera-gx handmatig of pas \$browser aan in keybinds.conf."
-    return 0
-  fi
-
-  if ! is_linux; then
-    return 0
-  fi
-
-  if [ -r /etc/os-release ]; then
-    # shellcheck source=/dev/null
-    . /etc/os-release
-    case "${ID:-}${ID_LIKE:-}" in
-      *arch* | *Arch*) ;;
-      *)
-        echo "Opera GX installatie overgeslagen (geen Arch-systeem)."
-        return 0
-        ;;
-    esac
-  fi
-
-  if pacman -Si opera-gx >/dev/null 2>&1; then
-    if command -v sudo >/dev/null 2>&1; then
-      echo "Installeer Opera GX via pacman..."
-      sudo pacman -S --needed opera-gx
-      return 0
-    fi
-    echo "Installeer Opera GX handmatig: pacman -S opera-gx"
-    return 0
-  fi
-
-  local aur_helper=""
-  if command -v yay >/dev/null 2>&1; then
-    aur_helper="yay"
-  elif command -v paru >/dev/null 2>&1; then
-    aur_helper="paru"
-  fi
-
-  if [ -n "$aur_helper" ]; then
-    echo "Opera GX staat niet in de officiele Arch-repositories (alleen AUR)."
-    if [ "$FORCE" = true ]; then
-      echo "Installeer Opera GX via $aur_helper (-y)..."
-      if "$aur_helper" -S --needed opera-gx; then
-        return 0
-      fi
-      echo "Opera GX installatie via $aur_helper mislukt."
-    elif [ -t 0 ]; then
-      read -r -p "Opera GX installeren via $aur_helper? [y/N] " answer
-      case "$answer" in
-        y | Y | yes | YES)
-          if "$aur_helper" -S --needed opera-gx; then
-            return 0
-          fi
-          echo "Opera GX installatie via $aur_helper mislukt."
-          ;;
-      esac
-    else
-      echo "Niet-interactieve modus: Opera GX overgeslagen."
-      echo "Installeer handmatig: $aur_helper -S opera-gx"
-      return 0
-    fi
-  else
-    echo "Geen AUR-helper (yay/paru) gevonden."
-  fi
-
-  if command -v opera-gx >/dev/null 2>&1; then
-    return 0
-  fi
-
-  if pacman -Si opera >/dev/null 2>&1 && command -v sudo >/dev/null 2>&1; then
-    if [ "$FORCE" = true ]; then
-      echo "Installeer Opera (standaard, geen GX) via pacman (-y)..."
-      sudo pacman -S --needed opera
-      echo "Let op: pas \$browser aan naar 'opera' in hypr/keybinds.conf."
-      return 0
-    elif [ -t 0 ]; then
-      read -r -p "Opera (standaard, geen GX) installeren via pacman? [y/N] " answer
-      case "$answer" in
-        y | Y | yes | YES)
-          sudo pacman -S --needed opera
-          echo "Let op: pas \$browser aan naar 'opera' in hypr/keybinds.conf."
-          return 0
-          ;;
-      esac
-    fi
-  fi
-
-  echo "Opera GX niet geinstalleerd."
-  echo "Installeer handmatig: yay -S opera-gx"
-  echo "Of pas \$browser aan in hypr/keybinds.conf naar jouw browser."
-}
-
 install_dependencies() {
   if ! command -v pacman >/dev/null 2>&1; then
     echo "pacman niet gevonden; pakketinstallatie overgeslagen."
@@ -256,7 +157,29 @@ install_dependencies() {
 
   echo "Installeer benodigde pakketten via pacman..."
   sudo pacman -S --needed "${ARCH_PACKAGES[@]}"
-  install_opera_gx
+}
+
+enable_audio_services() {
+  local script="$PROJECT_DIR/scripts/enable-audio.sh"
+
+  if is_windows_shell; then
+    echo "Audio-services: overgeslagen (Windows/Git Bash — geen systemd user-sessie)."
+    echo "  Op Linux in je Hyprland-sessie: bash \"$script\""
+    return 0
+  fi
+
+  if ! is_linux; then
+    echo "Audio-services: overgeslagen (geen Linux)."
+    return 0
+  fi
+
+  if [ ! -f "$script" ]; then
+    echo "Audio-services: $script ontbreekt; overgeslagen."
+    return 0
+  fi
+
+  chmod +x "$script" 2>/dev/null || true
+  bash "$script"
 }
 
 # Arch-pakketten uit README (Dependencies)
@@ -273,11 +196,17 @@ ARCH_PACKAGES=(
   brightnessctl
   playerctl
   pavucontrol
+  pipewire
+  pipewire-pulse
+  pipewire-alsa
+  wireplumber
   networkmanager
   network-manager-applet
   bluez
   blueman
+  upower
   dolphin
+  firefox
   ttf-jetbrains-mono-nerd
   inter-font
 )
@@ -296,6 +225,7 @@ print_environment_summary
 confirm_target_if_needed
 
 install_dependencies
+enable_audio_services
 
 mkdir -p "$BACKUP_DIR"
 mkdir -p "$CONFIG_DIR/hypr"

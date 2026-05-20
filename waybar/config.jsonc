@@ -28,8 +28,8 @@
   "custom/browser": {
     "format": "󰖟",
     "tooltip": true,
-    "tooltip-format": "Opera GX — Super+B",
-    "on-click": "opera-gx"
+    "tooltip-format": "Firefox — Super+B",
+    "on-click": "firefox"
   },
 
   "custom/files": {
@@ -138,9 +138,10 @@
   },
 
   "battery": {
-    "format": "{icon}",
-    "format-charging": "󰂄",
-    "format-plugged": "󰚥",
+    "bat": "BAT0",
+    "format": "{icon} {capacity}%",
+    "format-charging": "󰂄 {capacity}%",
+    "format-plugged": "󰚥 {capacity}%",
     "format-icons": ["󰂃", "󰁺", "󰁻", "󰁼", "󰁽", "󰁾", "󰁿", "󰂀", "󰂁", "󰂂", "󰁹"],
     "tooltip-format": "{capacity}% — {time}",
     "states": {
