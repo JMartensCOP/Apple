@@ -15,7 +15,7 @@
 
   "group/launchers": {
     "orientation": "horizontal",
-    "modules": ["custom/terminal", "custom/browser", "custom/files"]
+    "modules": ["custom/terminal", "custom/browser", "custom/files", "custom/code"]
   },
 
   "custom/terminal": {
@@ -37,6 +37,13 @@
     "tooltip": true,
     "tooltip-format": "Files — Super+E",
     "on-click": "dolphin"
+  },
+
+  "custom/code": {
+    "format": "󰨞",
+    "tooltip": true,
+    "tooltip-format": "Visual Studio Code — Super+Shift+C",
+    "on-click": "code"
   },
 
   "hyprland/workspaces": {
@@ -62,11 +69,27 @@
   "group/quick": {
     "orientation": "horizontal",
     "modules": [
+      "custom/keyboard",
+      "custom/rotate",
       "custom/restart",
       "custom/audio",
       "custom/wifi",
       "custom/bluetooth"
     ]
+  },
+
+  "custom/keyboard": {
+    "format": "󰌌",
+    "tooltip": true,
+    "tooltip-format": "Schermtoetsenbord (wvkbd)\nKlik: aan/uit",
+    "on-click": "bash \"$HOME/.config/big-sur/scripts/toggle-osk.sh\""
+  },
+
+  "custom/rotate": {
+    "format": "󰍹",
+    "tooltip": true,
+    "tooltip-format": "Schermrotatie — 0° → 90° → 180° → 270°\nSuper+Shift+R",
+    "on-click": "bash \"$HOME/.config/big-sur/scripts/rotate-display.sh\""
   },
 
   "custom/restart": {

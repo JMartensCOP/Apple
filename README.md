@@ -38,7 +38,7 @@ Na installatie start Hyprland met **hyprlock** in plaats van een lege desktop of
 
 Kitty/terminal wordt **niet** automatisch gestart. Open een terminal met **Super+T** of via het Waybar-dockicoon.
 
-**TTY vóór Hyprland:** wat je ziet *vóór* Hyprland (tekstlogin op een virtuele console, soms een kort flitsende shell) valt buiten dit thema. Dat regel je met je **display manager** (bijv. SDDM, GDM, LightDM) of door Hyprland als enige sessie via `~/.bash_profile` / `~/.zprofile` te starten. Wil je geen TTY-prompt zien, gebruik een grafische loginmanager in plaats van handmatig `Hyprland` typen op tty1.
+**TTY vóór Hyprland:** wat je ziet *vóór* Hyprland (Arch-prompt, logo, tekstlogin op tty1) valt **buiten** hyprlock en dit thema. **Hyprlock** helpt pas *nadat* Hyprland draait. Voor een grafisch inlogscherm zonder terminal-login gebruik je een **display manager** (aanbevolen: **SDDM**) of start je Hyprland automatisch vanuit je shell-profiel. Zie [Geen terminal bij opstarten](#geen-terminal-bij-opstarten).
 
 Na wijzigingen: `hyprctl reload` en opnieuw inloggen, of `./scripts/reload-theme.sh`.
 
@@ -167,7 +167,13 @@ big-sur-hyprland-theme/
     ├── start-session.sh
     ├── start-waybar.sh
     ├── reload-theme.sh
+    ├── toggle-osk.sh
+    ├── rotate-display.sh
     ├── backup-configs.sh
+    ├── enable-audio.sh
+    ├── enable-network.sh
+    ├── enable-graphical-login.sh
+    ├── fix-audio.sh
     └── sync-to-linux-home.sh
 ```
 
@@ -247,9 +253,9 @@ Waybar voelt als een **zwevende Big Sur menubar** (36px hoog, 8px top-margin, af
 
 | Zone | Modules |
 |------|---------|
-| Links | `group/launchers` — dock-pill met terminal, browser, bestandsbeheer |
+| Links | `group/launchers` — dock-pill met terminal, browser, bestandsbeheer, VS Code |
 | Midden | `hyprland/workspaces` — 5 persistente workspaces (●/○) |
-| Rechts | `group/quick` (herstart, audio, wifi, bluetooth) + `group/status` (audio, netwerk, batterij, tray) + `clock` |
+| Rechts | `group/quick` (toetsenbord, rotatie, herstart, audio, wifi, bluetooth) + `group/status` (audio, netwerk, batterij, tray) + `clock` |
 
 ### Waybar Modules
 
@@ -267,10 +273,12 @@ Waybar voelt als een **zwevende Big Sur menubar** (36px hoog, 8px top-margin, af
 }
 ```
 
-Rechts vóór de status-pill: `group/quick` met vier klikbare custom-modules:
+Rechts vóór de status-pill: `group/quick` met klikbare custom-modules:
 
 | Module | Icoon | Klik | Actie |
 |--------|-------|------|-------|
+| `custom/keyboard` | 󰌌 | Links | `toggle-osk.sh` — schermtoetsenbord (wvkbd) aan/uit |
+| `custom/rotate` | 󰍹 | Links | `rotate-display.sh` — rotatie 0° → 90° → 180° → 270° |
 | `custom/restart` | 󰑐 | Links | `~/.config/big-sur/scripts/restart-session.sh` — Hyprland + Waybar + wallpaper herladen |
 | `custom/restart` | 󰑐 | Rechts | `restart-computer.sh` — bevestiging (rofi/wofi) en `loginctl reboot` |
 | `custom/audio` | 󰓃 | Links | `pavucontrol` |
@@ -279,13 +287,14 @@ Rechts vóór de status-pill: `group/quick` met vier klikbare custom-modules:
 
 `install.sh` kopieert alle scripts naar `~/.config/big-sur/scripts/`. Bij handmatige installatie: zelfde map aanmaken en `scripts/*.sh` daarheen kopiëren (`chmod +x`).
 
-Links in de menubar: `group/launchers` met drie klikbare custom-modules (Nerd Font-iconen) die dezelfde apps starten als de Hyprland-keybinds:
+Links in de menubar: `group/launchers` met vier klikbare custom-modules (Nerd Font-iconen) die dezelfde apps starten als de Hyprland-keybinds:
 
 | Module | Icoon | `on-click` | Keybind |
 |--------|-------|------------|---------|
 | `custom/terminal` | 󰆍 | `kitty` | Super+T |
 | `custom/browser` | 󰖟 | `firefox` | Super+B |
 | `custom/files` | 󰝰 | `dolphin` | Super+E |
+| `custom/code` | 󰨞 | `code` | Super+Shift+C |
 
 ### Waybar CSS Richting
 
@@ -294,7 +303,7 @@ Zie `waybar/style.css`. Kernpunten:
 - `window#waybar` — floating bar: `border-radius: 14px`, glass panel `rgba(23, 23, 56, 0.58)`, box-shadow;
 - `#launchers` — dock-pill met hover-glow (cyaan) en active-state (paars);
 - `#workspaces` — gecentreerde pill, active workspace gradient `#67c7e8 → #b46cff`;
-- `#quick` — quick-action pill (zelfde stijl als launchers): herstart, audio, wifi, bluetooth;
+- `#quick` — quick-action pill (zelfde stijl als launchers): toetsenbord, rotatie, herstart, audio, wifi, bluetooth;
 - `#status` — gegroepeerde status-pill; icon-only modules met tooltips;
 - `#clock` — aparte pill rechts, klik rechts wisselt datum/tijd.
 
@@ -429,19 +438,25 @@ alsa-firmware
 sof-firmware
 networkmanager
 network-manager-applet
+iw
+wireless-regdb
+linux-firmware
 bluez
 blueman
 upower
 dolphin
 firefox
+code
 ttf-jetbrains-mono-nerd
 inter-font
+wvkbd
+wlr-randr
 ```
 
 Voor Arch:
 
 ```bash
-sudo pacman -S hyprland waybar kitty hyprpaper rofi-wayland dunst wl-clipboard grim slurp brightnessctl playerctl pavucontrol pipewire pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-firmware sof-firmware networkmanager network-manager-applet bluez blueman upower dolphin firefox ttf-jetbrains-mono-nerd inter-font
+sudo pacman -S hyprland waybar kitty hyprpaper rofi-wayland dunst wl-clipboard grim slurp brightnessctl playerctl pavucontrol pipewire pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-firmware sof-firmware networkmanager network-manager-applet iw wireless-regdb linux-firmware bluez blueman upower dolphin firefox code ttf-jetbrains-mono-nerd inter-font wvkbd wlr-randr
 ```
 
 **Audio (Arch):** gebruik **PipeWire** met `pipewire-pulse` (PulseAudio-compatibiliteit voor Waybar `pulseaudio`-module en `pavucontrol`). Het legacy `pulseaudio`-pakket is niet nodig. Voor Intel-laptops (bijv. HP EliteBook) installeert `install.sh` ook `alsa-firmware`, `sof-firmware` en `alsa-utils`. `install.sh` schakelt de officiële user-units in via `scripts/enable-audio.sh` en probeert laptop-speakers als standaard uitgang via `scripts/fix-audio.sh --auto`:
@@ -454,7 +469,7 @@ wireplumber.service
 
 Op Windows/Git Bash worden pakketten en systemd overgeslagen; voer `./install.sh` opnieuw uit in je Hyprland-sessie op Linux.
 
-Firefox staat in de officiële Arch-repositories (`firefox`). `install.sh` installeert het samen met de overige pakketten. Voor een andere browser pas je `$browser` in `hypr/keybinds.conf` en `custom/browser` in `waybar/config.jsonc` aan.
+Firefox staat in de officiële Arch-repositories (`firefox`). Visual Studio Code heet op Arch **`code`** (open-source build in `extra`; volledige Visual Studio IDE is alleen Windows/macOS). `install.sh` installeert beide samen met de overige pakketten. Voor een andere browser pas je `$browser` in `hypr/keybinds.conf` en `custom/browser` in `waybar/config.jsonc` aan. Voor een andere editor pas je `$editor` en `custom/code` aan.
 
 Als pakketten niet bestaan op de distro van de gebruiker, moet de README uitleggen dat de gebruiker distro-specifieke pakketnamen moet gebruiken.
 
@@ -485,6 +500,14 @@ chmod +x install.sh scripts/*.sh
 ```
 
 Voer installatie uit **in je Linux Hyprland-sessie**, niet alleen vanuit Git Bash op Windows (zie Troubleshooting).
+
+Optioneel (grafisch inloggen, geen TTY vóór Hyprland):
+
+```bash
+./install.sh --with-sddm
+# of later:
+./scripts/enable-graphical-login.sh
+```
 
 Optioneel:
 
@@ -610,6 +633,7 @@ $mainMod = SUPER
 $terminal = kitty
 $fileManager = dolphin
 $browser = firefox
+$editor = code
 $menu = rofi -show drun -theme ~/.config/rofi/big-sur.rasi
 
 bind = $mainMod, T, exec, $terminal
@@ -617,6 +641,7 @@ bind = $mainMod, Q, killactive
 bind = $mainMod, M, exit
 bind = $mainMod, E, exec, $fileManager
 bind = $mainMod, B, exec, $browser
+bind = $mainMod SHIFT, C, exec, $editor
 bind = $mainMod, Space, exec, $menu
 bind = $mainMod, L, exec, hyprlock
 bind = $mainMod, V, togglefloating
@@ -631,6 +656,9 @@ bind = , XF86AudioMute, exec, wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle
 
 binde = , XF86MonBrightnessUp, exec, brightnessctl set +5%
 binde = , XF86MonBrightnessDown, exec, brightnessctl set 5%-
+
+# Convertible: schermrotatie (zelfde script als Waybar-knop)
+bind = $mainMod SHIFT, R, exec, bash "$HOME/.config/big-sur/scripts/rotate-display.sh"
 ```
 
 Cursor moet deze keybinds splitsen naar `hypr/keybinds.conf` en vanuit `hyprland.conf` sourcen.
@@ -812,9 +840,58 @@ bash ~/.config/big-sur/scripts/fix-audio.sh --auto   # prefer analog/built-in sp
 wpctl status                                         # snelle status
 ```
 
+### `scripts/toggle-osk.sh`
+
+Schakelt een **Wayland-schermtoetsenbord** in/uit. Voorkeur: **wvkbd** (`wvkbd-deskintl`, `wvkbd-mobintl` of `wvkbd`). Valt terug op **onboard** als wvkbd ontbreekt. Waybar-knop `custom/keyboard` (󰌌) in `group/quick`.
+
+```bash
+bash ~/.config/big-sur/scripts/toggle-osk.sh
+```
+
+Arch: `sudo pacman -S wvkbd` (wordt door `install.sh` meegeïnstalleerd).
+
+### `scripts/rotate-display.sh`
+
+Roteert het **primaire paneel** (meestal `eDP-1` op laptops) in stappen **0° → 90° → 180° → 270°** via Hyprland:
+
+```bash
+hyprctl keyword monitor <naam>,transform,<0-3>
+```
+
+Waybar-knop `custom/rotate` (󰍹) en sneltoets **Super+Shift+R**. Status wordt bewaard in `~/.cache/big-sur/display-rotation`. Als `hyprctl` niet beschikbaar is, valt het script terug op `wlr-randr --transform`.
+
+Handmatig:
+
+```bash
+bash ~/.config/big-sur/scripts/rotate-display.sh
+```
+
 ### `scripts/reload-theme.sh`
 
 Herlaadt Hyprland, start Waybar via `start-waybar.sh`, en past de wallpaper toe.
+
+### `scripts/enable-network.sh`
+
+Schakelt **NetworkManager** in (system-wide), zet WiFi-radio aan, toont `nmcli`-diagnose. Controleert **iwd**-conflicten (alleen één WiFi-backend tegelijk). Waybar wifi-knop opent `nm-connection-editor` — werkt alleen als NetworkManager draait.
+
+```bash
+bash ~/.config/big-sur/scripts/enable-network.sh
+bash ~/.config/big-sur/scripts/enable-network.sh --connect "JouwSSID"
+```
+
+Wordt automatisch aangeroepen door `install.sh` op Linux.
+
+### `scripts/enable-graphical-login.sh`
+
+Installeert **SDDM** + `qt6-ct` op Arch, maakt basis `/etc/sddm.conf.d/`, schakelt `sddm.service` in. SDDM toont **Hyprland** als `/usr/share/wayland-sessions/hyprland.desktop` bestaat (pakket `hyprland`).
+
+```bash
+./scripts/enable-graphical-login.sh
+# of tijdens install:
+./install.sh --with-sddm
+```
+
+Na installatie: **herstart**. Verwijder `exec Hyprland` uit `~/.bash_profile` / `~/.zprofile` om dubbele sessies te voorkomen.
 
 ### `scripts/backup-configs.sh`
 
@@ -859,6 +936,95 @@ pkill waybar && waybar &
 ```
 
 ## Troubleshooting
+
+### Geen terminal bij opstarten
+
+**Symptoom:** Na boot zie je Arch-prompt → logo → **tekstlogin (tty1)**. Pas na `login` + handmatig `Hyprland` kom je op de desktop (of hyprlock).
+
+**Oorzaak:** Er is geen **display manager** actief; je boot naar multi-user.target en logt in op een virtuele console.
+
+**Oplossing A — SDDM (aanbevolen, grafisch inlogscherm):**
+
+```bash
+cd /pad/naar/big-sur-hyprland-theme
+chmod +x scripts/enable-graphical-login.sh
+./scripts/enable-graphical-login.sh
+# of in één keer met thema-installatie:
+./install.sh --with-sddm
+sudo reboot
+```
+
+Kies op het SDDM-scherm sessie **Hyprland**. Hyprlock start daarna via `start-session.sh`.
+
+Handmatig (zelfde als het script):
+
+```bash
+sudo pacman -S --needed sddm qt6-ct hyprland
+sudo systemctl enable --now sddm.service
+ls /usr/share/wayland-sessions/hyprland.desktop   # moet bestaan
+sudo reboot
+```
+
+**Oplossing B — Hyprland automatisch na shell-login (geen SDDM):**
+
+Als je liever geen display manager installeert, voeg **één** regel toe aan `~/.bash_profile` of `~/.zprofile` (niet beide):
+
+```bash
+if [ -z "$DISPLAY" ] && [ "$(tty)" = "/dev/tty1" ]; then
+  exec Hyprland
+fi
+```
+
+Log daarna uit en opnieuw in op tty1 — Hyprland start direct. Je ziet nog wel kort de shell-prompt vóór Hyprland; SDDM is visueel netter.
+
+**Niet verwarren met hyprlock:** `start-session.sh` / hyprlock regelen alleen het **vergrendelscherm ná** Hyprland-start, niet de boot-flow vóór Hyprland.
+
+**Na SDDM:** verwijder eventuele `exec Hyprland`, `startx` of `.xinitrc`-Hyprland-start uit shell-profielen.
+
+**Alternatief:** `greetd` + `tuigreet` (minimalistisch). SDDM is eenvoudiger voor Hyprland op Arch; zie [Arch Wiki SDDM](https://wiki.archlinux.org/title/SDDM).
+
+### WiFi werkt niet (Hyprland / HP EliteBook x360)
+
+Intel WiFi (`iwlwifi`) op EliteBook x360 vereist **NetworkManager**, firmware en geen conflict met **iwd**.
+
+**Snel herstel:**
+
+```bash
+cd /pad/naar/big-sur-hyprland-theme
+chmod +x scripts/enable-network.sh
+./scripts/enable-network.sh
+# verbinden:
+./scripts/enable-network.sh --connect "JouwSSID"
+```
+
+**Pakketten** (zitten in `install.sh` / `ARCH_PACKAGES`):
+
+```bash
+sudo pacman -S --needed networkmanager network-manager-applet iw wireless-regdb linux-firmware
+sudo systemctl enable --now NetworkManager
+```
+
+**Diagnose:**
+
+```bash
+systemctl status NetworkManager
+nmcli radio wifi on
+nmcli device status
+nmcli dev wifi list
+rfkill list
+lsmod | grep iwlwifi
+dmesg | grep -i iwl | tail
+```
+
+| Probleem | Oplossing |
+|----------|-----------|
+| `iwd` en NetworkManager tegelijk | `./scripts/enable-network.sh` (schakelt iwd uit) of `sudo systemctl disable --now iwd` |
+| WiFi soft-blocked | `rfkill unblock wifi` |
+| Geen netwerken in lijst | `sudo pacman -S linux-firmware`; herstart |
+| Waybar wifi-knop doet niets | NetworkManager moet draaien; knop opent `nm-connection-editor` |
+| Alleen ethernet werkt | Controleer BIOS: wireless enabled; kernel ≥ recent met iwlwifi |
+
+**Waybar:** quick-bar icoon 󰖩 → `nm-connection-editor`. Status-icoon 󰤨 (`network`-module) toont signaal wanneer verbonden.
 
 ### Configs Verschijnen Niet In Je Hyprland-sessie
 
@@ -1048,12 +1214,14 @@ Dit thema werkt op een **HP EliteBook x360** (2-in-1 business-laptop) zonder spe
 | Onderdeel | Op EliteBook x360 | In dit thema |
 |-----------|-------------------|--------------|
 | Grafiek | Meestal **Intel** (geen NVIDIA-driver-gedoe) | Geen GPU-specifieke config nodig |
-| WiFi | Vaak **Intel** (`iwlwifi`); soms Realtek op oudere modellen | NetworkManager + `nm-connection-editor` (Waybar wifi-knop) |
+| WiFi | Vaak **Intel** (`iwlwifi`); soms Realtek op oudere modellen | NetworkManager + `enable-network.sh`; Waybar wifi-knop → `nm-connection-editor` |
 | Bluetooth | Standaard met **BlueZ** | `bluez` + `blueman` + Waybar bluetooth-knop |
 | Batterij | Eén interne batterij (`BAT0`); zelden twee | Waybar `battery` met `"bat": "BAT0"` + pakket **upower** |
 | Touchpad | Werkt via Hyprland `input { touchpad { ... } }` | `natural_scroll`, `tap-to-click` in `hypr/hyprland.conf` |
 | Touchscreen | Vaak Wacom/ELAN; werkt vaak out-of-the-box als pointer | Geen aparte tablet-modus in Hyprland-config |
-| Auto-rotate (tablet) | **Niet** ingebouwd in dit thema | Optioneel: `iio-sensor-proxy` + `monitor`/`hyprctl` handmatig |
+| Schermtoetsenbord | Handig in tablet-/vouwstand | Waybar 󰌌 → `toggle-osk.sh` (**wvkbd**) |
+| Schermrotatie (handmatig) | Geen automatische G-sensor-rotate | Waybar 󰍹 of **Super+Shift+R** → `rotate-display.sh` (0°→90°→180°→270°) |
+| Auto-rotate (tablet) | **Niet** ingebouwd | Optioneel later: `iio-sensor-proxy` + script |
 | Vingerafdruk | Vaak **niet** bruikbaar zonder extra drivers (`fprintd`) | Niet onderdeel van het thema |
 | Suspend / fan | Standaard kernel/ACPI | Geen thema-specifieke instellingen |
 
@@ -1063,11 +1231,19 @@ Dit thema werkt op een **HP EliteBook x360** (2-in-1 business-laptop) zonder spe
 
 2. **Leeg batterij-icoon of 0%** — Installeer `upower`, controleer `BAT0` vs `BAT1`, herstart Waybar. Soms helpt `systemctl enable --now upower` (user-service niet altijd nodig; daemon draait system-wide).
 
-3. **WiFi werkt, maar icoon blijft “los”** — Klik op het wifi-icoon → `nm-connection-editor`; controleer `nmcli device wifi list` en of NetworkManager actief is: `systemctl status NetworkManager`.
+3. **WiFi werkt niet / icoon blijft los** — `./scripts/enable-network.sh`; firmware `linux-firmware`; geen iwd+NM tegelijk. Waybar 󰖩 → `nm-connection-editor` (alleen als NetworkManager actief is).
 
-4. **Touchscreen reageert niet / alleen touchpad** — Controleer in Hyprland: `hyprctl devices` (touch-device zichtbaar?). Soms ontbreken firmware-pakketten (`linux-firmware`). Rotatie: dit thema configureert geen auto-rotate; voor tablet-modus zoek je distro-docs over `iio-sensor-proxy` en `wlr-randr`/`hyprctl keyword monitor`.
+4. **Boot vraagt terminal-login vóór desktop** — Geen SDDM/display manager. `./scripts/enable-graphical-login.sh` of `./install.sh --with-sddm`. Zie [Geen terminal bij opstarten](#geen-terminal-bij-opstarten).
 
-5. **Helderheidstoetsen (Fn)** — Thema gebruikt `brightnessctl` (in `hypr/keybinds.conf`). Als toetsen niets doen: `brightnessctl info` en eventueel `brightnessctl --list`.
+5. **Touchscreen reageert niet / alleen touchpad** — Controleer in Hyprland: `hyprctl devices` (touch-device zichtbaar?). Soms ontbreken firmware-pakketten (`linux-firmware`).
+
+6. **Verticaal / tablet-modus (vouw-laptop)** — Na `./install.sh` op Linux:
+   - **Rotatie:** klik 󰍹 in Waybar of druk **Super+Shift+R** (elke druk: 0° → 90° → 180° → 270°). Script: `~/.config/big-sur/scripts/rotate-display.sh`. Vereist Hyprland (`hyprctl keyword monitor eDP-1,transform,<0-3>`) of fallback `wlr-randr`.
+   - **Schermtoetsenbord:** klik 󰌌 in Waybar → `toggle-osk.sh` (wvkbd). Op vouw-/touchschermen is `wvkbd-deskintl` vaak prettiger dan `wvkbd-mobintl`; beide zitten in het Arch-pakket `wvkbd`.
+   - Draai je fysiek het scherm zonder knop: er is **geen** automatische rotatie; gebruik de Waybar-knop of sneltoets.
+   - Werkt rotatie niet terwijl `hyprctl` “ok” zegt: controleer of **kanshi/shikane** niet tegelijk je monitors beheert (die overschrijven `hyprctl keyword`). Zie [Hyprland monitors](https://wiki.hypr.land/Configuring/Monitors/).
+
+7. **Helderheidstoetsen (Fn)** — Thema gebruikt `brightnessctl` (in `hypr/keybinds.conf`). Als toetsen niets doen: `brightnessctl info` en eventueel `brightnessctl --list`.
 
 **Snelle diagnose op de EliteBook (in Hyprland-terminal):**
 
@@ -1077,6 +1253,9 @@ upower -e | grep -i bat
 nmcli -t -f ACTIVE,SSID dev wifi
 bluetoothctl show
 hyprctl devices
+hyprctl monitors | grep -E '^Monitor|transform'
+bash ~/.config/big-sur/scripts/rotate-display.sh
+bash ~/.config/big-sur/scripts/toggle-osk.sh
 ~/.config/big-sur/scripts/start-waybar.sh
 ```
 

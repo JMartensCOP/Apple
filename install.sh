@@ -5,6 +5,7 @@ PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIG_DIR=""
 BACKUP_DIR=""
 FORCE=false
+WITH_SDDM=false
 
 usage() {
   cat <<'EOF'
@@ -12,6 +13,7 @@ Usage: ./install.sh [options]
 
 Options:
   --config-dir PATH   Install configs here (default: $XDG_CONFIG_HOME or $HOME/.config)
+  --with-sddm         Install SDDM and enable graphical login (no TTY login before Hyprland)
   -y, --yes           Skip confirmation when target may not be your Hyprland session
   -h, --help          Show this help
 
@@ -20,6 +22,11 @@ Environment:
 
 On Linux Hyprland, run from a terminal in your session (not Git Bash on Windows):
   ./install.sh
+
+Graphical login (SDDM) without manual TTY login:
+  ./install.sh --with-sddm
+  # or after install:
+  ./scripts/enable-graphical-login.sh
 
 If you already installed from Windows/Git Bash, copy configs into Linux home:
   ./scripts/sync-to-linux-home.sh /mnt/c/Users/YOUR_USER/.config
@@ -34,6 +41,10 @@ while [ $# -gt 0 ]; do
       ;;
     -y|--yes)
       FORCE=true
+      shift
+      ;;
+    --with-sddm)
+      WITH_SDDM=true
       shift
       ;;
     -h|--help)
@@ -182,6 +193,77 @@ enable_audio_services() {
   bash "$script"
 }
 
+enable_network_services() {
+  local script="$PROJECT_DIR/scripts/enable-network.sh"
+
+  if is_windows_shell; then
+    echo "NetworkManager: overgeslagen (Windows/Git Bash)."
+    echo "  Op Linux: bash \"$script\""
+    return 0
+  fi
+
+  if ! is_linux; then
+    echo "NetworkManager: overgeslagen (geen Linux)."
+    return 0
+  fi
+
+  if [ ! -f "$script" ]; then
+    echo "NetworkManager: $script ontbreekt; overgeslagen."
+    return 0
+  fi
+
+  chmod +x "$script" 2>/dev/null || true
+  bash "$script" -y
+}
+
+install_display_manager() {
+  local script="$PROJECT_DIR/scripts/enable-graphical-login.sh"
+
+  if is_windows_shell || ! is_linux; then
+    echo "SDDM: overgeslagen (alleen op Linux Hyprland/Arch)."
+    echo "  Zie README: Geen terminal bij opstarten"
+    return 0
+  fi
+
+  if [ ! -f "$script" ]; then
+    echo "SDDM: $script ontbreekt; overgeslagen."
+    return 0
+  fi
+
+  chmod +x "$script" 2>/dev/null || true
+  if [ "$WITH_SDDM" = true ]; then
+    bash "$script" -y
+  elif [ "$FORCE" = true ]; then
+    echo "SDDM overgeslagen (-y). Grafisch inloggen: ./scripts/enable-graphical-login.sh"
+  else
+    echo ""
+    echo "Grafisch inloggen (SDDM) voorkomt handmatige TTY-login vóór Hyprland."
+    read -r -p "SDDM nu installeren en inschakelen? [y/N] " answer
+    case "$answer" in
+      y | Y | yes | YES)
+        bash "$script" -y
+        ;;
+      *)
+        echo "SDDM overgeslagen. Later: ./scripts/enable-graphical-login.sh"
+        ;;
+    esac
+  fi
+}
+
+verify_hyprland_session_desktop() {
+  local desktop="/usr/share/wayland-sessions/hyprland.desktop"
+
+  if ! is_linux; then
+    return 0
+  fi
+
+  if [ -f "$desktop" ]; then
+    echo "Hyprland-sessie: $desktop (SDDM/GDM kan Hyprland tonen)"
+  elif command -v Hyprland >/dev/null 2>&1 || command -v hyprland >/dev/null 2>&1; then
+    echo "WAARSCHUWING: $desktop ontbreekt — herinstalleer hyprland voor display manager."
+  fi
+}
+
 # Arch-pakketten uit README (Dependencies)
 ARCH_PACKAGES=(
   hyprland
@@ -206,13 +288,19 @@ ARCH_PACKAGES=(
   sof-firmware
   networkmanager
   network-manager-applet
+  iw
+  wireless-regdb
+  linux-firmware
   bluez
   blueman
   upower
   dolphin
   firefox
+  code
   ttf-jetbrains-mono-nerd
   inter-font
+  wvkbd
+  wlr-randr
 )
 
 resolve_config_dir
@@ -235,6 +323,9 @@ confirm_target_if_needed
 
 install_dependencies
 enable_audio_services
+enable_network_services
+install_display_manager
+verify_hyprland_session_desktop
 
 mkdir -p "$BACKUP_DIR"
 mkdir -p "$CONFIG_DIR/hypr"
@@ -312,3 +403,9 @@ echo "  hyprctl reload"
 echo "  $CONFIG_DIR/big-sur/scripts/start-waybar.sh"
 echo "  $PROJECT_DIR/scripts/reload-theme.sh"
 echo "  $PROJECT_DIR/scripts/apply-wallpaper.sh"
+echo ""
+echo "Geen TTY-login vóór desktop:"
+echo "  ./scripts/enable-graphical-login.sh   # SDDM (grafisch inloggen → Hyprland)"
+echo ""
+echo "WiFi / NetworkManager:"
+echo "  $CONFIG_DIR/big-sur/scripts/enable-network.sh"

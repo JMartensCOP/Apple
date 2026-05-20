@@ -36,7 +36,8 @@ window#waybar {
 
 #launchers #custom-terminal,
 #launchers #custom-browser,
-#launchers #custom-files {
+#launchers #custom-files,
+#launchers #custom-code {
   color: #d8dee9;
   font-size: 15px;
   padding: 0 11px;
@@ -48,7 +49,8 @@ window#waybar {
 
 #launchers #custom-terminal:hover,
 #launchers #custom-browser:hover,
-#launchers #custom-files:hover {
+#launchers #custom-files:hover,
+#launchers #custom-code:hover {
   color: #f5f7fa;
   background: rgba(103, 199, 232, 0.20);
   box-shadow: 0 0 12px rgba(103, 199, 232, 0.15);
@@ -56,7 +58,8 @@ window#waybar {
 
 #launchers #custom-terminal:active,
 #launchers #custom-browser:active,
-#launchers #custom-files:active {
+#launchers #custom-files:active,
+#launchers #custom-code:active {
   background: rgba(180, 108, 255, 0.28);
   color: #f5f7fa;
 }
@@ -111,6 +114,8 @@ window#waybar {
   box-shadow: inset 0 1px 0 rgba(245, 247, 250, 0.06);
 }
 
+#quick #custom-keyboard,
+#quick #custom-rotate,
 #quick #custom-restart,
 #quick #custom-audio,
 #quick #custom-wifi,
@@ -124,6 +129,8 @@ window#waybar {
   transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
 }
 
+#quick #custom-keyboard:hover,
+#quick #custom-rotate:hover,
 #quick #custom-restart:hover,
 #quick #custom-audio:hover,
 #quick #custom-wifi:hover,
@@ -133,6 +140,8 @@ window#waybar {
   box-shadow: 0 0 12px rgba(103, 199, 232, 0.15);
 }
 
+#quick #custom-keyboard:active,
+#quick #custom-rotate:active,
 #quick #custom-restart:active,
 #quick #custom-audio:active,
 #quick #custom-wifi:active,
