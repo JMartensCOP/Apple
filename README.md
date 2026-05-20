@@ -2,13 +2,13 @@
 
 Een uitgebreid projectplan voor een macOS Big Sur-geinspireerd Hyprland-thema met Waybar, Kitty en een meegeleverde wallpaper. Dit document is bedoeld als briefing voor Cursor of een andere code-assistent om het volledige thema te bouwen, inclusief configuratiebestanden, styling, scripts en installatie-uitleg.
 
-De wallpaper voor dit project is:
+De wallpaper voor dit project staat in de repo als:
 
 ```text
-Background.jpg
+assets/Background.jpg
 ```
 
-Deze afbeelding moet worden gebruikt als standaardachtergrond van het Hyprland-thema.
+Bij installatie wordt deze gekopieerd naar `~/.config/hypr/big-sur/Background.jpg` (of je gekozen `CONFIG_DIR`). Hyprland laadt de achtergrond via **hyprpaper** (`hypr/hyprpaper.conf`).
 
 ## Doel Van Het Project
 
@@ -131,7 +131,8 @@ big-sur-hyprland-theme/
 └── scripts/
     ├── apply-wallpaper.sh
     ├── reload-theme.sh
-    └── backup-configs.sh
+    ├── backup-configs.sh
+    └── sync-to-linux-home.sh
 ```
 
 Als Cursor een bestaand dotfiles-project gebruikt, mag deze structuur worden aangepast, maar de scheiding tussen `hypr`, `waybar`, `kitty`, `assets` en `scripts` moet behouden blijven.
@@ -197,85 +198,69 @@ Cursor moet controleren of de syntax past bij de actuele Hyprland-versie. Als ee
 
 ## Waybar Eisen
 
-Waybar moet voelen als een zwevende Big Sur menubar:
+Waybar voelt als een **zwevende Big Sur menubar** (36px hoog, 8px top-margin, afgeronde hoeken):
 
-- semi-transparante achtergrond;
-- blur-effect waar mogelijk;
-- afgeronde modules;
-- subtiele borders;
-- rustige spacing;
-- duidelijke iconen;
-- actieve workspace met cyaan/paarse highlight;
-- waarschuwingen in rood;
-- batterijstatus;
-- netwerkstatus;
-- klok;
-- audio;
-- tray;
-- CPU/RAM optioneel;
-- backlight indien beschikbaar.
+- semi-transparante glasachtige achtergrond met subtiele schaduw;
+- afgeronde pill-modules met lichte borders;
+- rustige spacing en hover-transities;
+- actieve workspace met cyaan/paarse gradient;
+- waarschuwingen in Big Sur-rood;
+- icon-only statusmodules met tooltips (volume, netwerk, batterij).
+
+### Layout
+
+| Zone | Modules |
+|------|---------|
+| Links | `group/launchers` — dock-pill met terminal, browser, bestandsbeheer |
+| Midden | `hyprland/workspaces` — 5 persistente workspaces (●/○) |
+| Rechts | `group/quick` (herstart, audio, wifi, bluetooth) + `group/status` (audio, netwerk, batterij, tray) + `clock` |
 
 ### Waybar Modules
-
-Aanbevolen modules:
 
 ```jsonc
 {
   "layer": "top",
   "position": "top",
-  "height": 34,
-  "spacing": 8,
-  "modules-left": ["hyprland/workspaces"],
-  "modules-center": ["clock"],
-  "modules-right": ["pulseaudio", "network", "battery", "tray"]
+  "height": 36,
+  "margin-top": 8,
+  "margin-left": 16,
+  "margin-right": 16,
+  "modules-left": ["group/launchers"],
+  "modules-center": ["hyprland/workspaces"],
+  "modules-right": ["group/quick", "group/status", "clock"]
 }
 ```
+
+Rechts vóór de status-pill: `group/quick` met vier klikbare custom-modules:
+
+| Module | Icoon | Klik | Actie |
+|--------|-------|------|-------|
+| `custom/restart` | 󰑐 | Links | `~/.config/big-sur/scripts/restart-session.sh` — Hyprland + Waybar + wallpaper herladen |
+| `custom/restart` | 󰑐 | Rechts | `restart-computer.sh` — bevestiging (rofi/wofi) en `loginctl reboot` |
+| `custom/audio` | 󰓃 | Links | `pavucontrol` |
+| `custom/wifi` | 󰖩 | Links | `nm-connection-editor` |
+| `custom/bluetooth` | 󰂯 | Links | `blueman-manager` |
+
+`install.sh` kopieert alle scripts naar `~/.config/big-sur/scripts/`. Bij handmatige installatie: zelfde map aanmaken en `scripts/*.sh` daarheen kopiëren (`chmod +x`).
+
+Links in de menubar: `group/launchers` met drie klikbare custom-modules (Nerd Font-iconen) die dezelfde apps starten als de Hyprland-keybinds:
+
+| Module | Icoon | `on-click` | Keybind |
+|--------|-------|------------|---------|
+| `custom/terminal` | 󰆍 | `kitty` | Super+T |
+| `custom/browser` | 󰖟 | `opera-gx` | Super+B |
+| `custom/files` | 󰝰 | `dolphin` | Super+E |
 
 ### Waybar CSS Richting
 
-De Waybar CSS moet ongeveer deze stijl volgen:
+Zie `waybar/style.css`. Kernpunten:
 
-```css
-* {
-  font-family: "SF Pro Display", "Inter", "JetBrainsMono Nerd Font", sans-serif;
-  font-size: 13px;
-  border: none;
-  border-radius: 0;
-  min-height: 0;
-}
-
-window#waybar {
-  background: rgba(23, 23, 56, 0.62);
-  color: #f5f7fa;
-  border-bottom: 1px solid rgba(245, 247, 250, 0.14);
-}
-
-#workspaces button {
-  color: #d8dee9;
-  background: transparent;
-  padding: 0 10px;
-  margin: 5px 2px;
-  border-radius: 999px;
-}
-
-#workspaces button.active {
-  color: #171738;
-  background: linear-gradient(135deg, #67c7e8, #b46cff);
-}
-
-#clock,
-#pulseaudio,
-#network,
-#battery,
-#tray {
-  background: rgba(245, 247, 250, 0.10);
-  color: #f5f7fa;
-  padding: 0 12px;
-  margin: 5px 3px;
-  border-radius: 999px;
-  border: 1px solid rgba(245, 247, 250, 0.12);
-}
-```
+- `window#waybar` — floating bar: `border-radius: 14px`, glass panel `rgba(23, 23, 56, 0.58)`, box-shadow;
+- `#launchers` — dock-pill met hover-glow (cyaan) en active-state (paars);
+- `#workspaces` — gecentreerde pill, active workspace gradient `#67c7e8 → #b46cff`;
+- `#quick` — quick-action pill (zelfde stijl als launchers): herstart, audio, wifi, bluetooth;
+- `#status` — gegroepeerde status-pill; icon-only modules met tooltips;
+- `#clock` — aparte pill rechts, klik rechts wisselt datum/tijd.
 
 ## Kitty Eisen
 
@@ -351,20 +336,23 @@ Tijdens installatie moet het script deze kopieren naar:
 ~/.config/hypr/big-sur/Background.jpg
 ```
 
-Hyprpaper-config:
+Hyprpaper-config (huidige hyprpaper-syntax):
 
 ```ini
-preload = ~/.config/hypr/big-sur/Background.jpg
-wallpaper = ,~/.config/hypr/big-sur/Background.jpg
+wallpaper {
+    monitor =
+    path = ~/.config/hypr/big-sur/Background.jpg
+    fit_mode = cover
+}
 ```
 
-Als `swww` wordt gebruikt:
+Als `swww` wordt gebruikt (niet standaard in dit thema):
 
 ```bash
 swww img "$HOME/.config/hypr/big-sur/Background.jpg" --transition-type grow --transition-duration 1
 ```
 
-Cursor mag kiezen tussen `hyprpaper` en `swww`, maar moet in de README vermelden welke dependency wordt gebruikt.
+Dit thema gebruikt **hyprpaper** (niet `swww`) voor de desktopachtergrond.
 
 ## Fonts
 
@@ -397,6 +385,11 @@ brightnessctl
 playerctl
 pavucontrol
 networkmanager
+network-manager-applet
+bluez
+blueman
+dolphin
+opera-gx (AUR; zie hieronder)
 ttf-jetbrains-mono-nerd
 inter-font
 ```
@@ -404,7 +397,15 @@ inter-font
 Voor Arch:
 
 ```bash
-sudo pacman -S hyprland waybar kitty hyprpaper rofi-wayland dunst wl-clipboard grim slurp brightnessctl playerctl pavucontrol networkmanager ttf-jetbrains-mono-nerd inter-font
+sudo pacman -S hyprland waybar kitty hyprpaper rofi-wayland dunst wl-clipboard grim slurp brightnessctl playerctl pavucontrol networkmanager network-manager-applet bluez blueman dolphin ttf-jetbrains-mono-nerd inter-font
+```
+
+Opera GX staat niet in de officiele Arch-repositories. `install.sh` probeert het via pacman te installeren als het daar beschikbaar is; anders vraagt het script om installatie via `yay` of `paru` (AUR-pakket `opera-gx`). Als fallback kan `opera` uit de officiële repos worden geinstalleerd — pas dan `$browser` aan naar `opera` in `hypr/keybinds.conf`.
+
+```bash
+yay -S opera-gx
+# of
+paru -S opera-gx
 ```
 
 Als pakketten niet bestaan op de distro van de gebruiker, moet de README uitleggen dat de gebruiker distro-specifieke pakketnamen moet gebruiken.
@@ -431,9 +432,11 @@ Het script moet:
 De README moet aan gebruikers uitleggen:
 
 ```bash
-chmod +x install.sh
+chmod +x install.sh scripts/*.sh
 ./install.sh
 ```
+
+Voer installatie uit **in je Linux Hyprland-sessie**, niet alleen vanuit Git Bash op Windows (zie Troubleshooting).
 
 Optioneel:
 
@@ -558,12 +561,14 @@ Aanbevolen keybinds:
 $mainMod = SUPER
 $terminal = kitty
 $fileManager = dolphin
+$browser = opera-gx
 $menu = rofi -show drun -theme ~/.config/rofi/big-sur.rasi
 
-bind = $mainMod, Return, exec, $terminal
+bind = $mainMod, T, exec, $terminal
 bind = $mainMod, Q, killactive
 bind = $mainMod, M, exit
 bind = $mainMod, E, exec, $fileManager
+bind = $mainMod, B, exec, $browser
 bind = $mainMod, Space, exec, $menu
 bind = $mainMod, V, togglefloating
 bind = $mainMod, F, fullscreen
@@ -621,18 +626,29 @@ kb_layout = nl
 
 ## Window Rules
 
-Aanbevolen regels:
+Hyprland 0.48+ gebruikt `windowrule` met expliciete `match:`-velden (niet meer `windowrulev2`). Aanbevolen regels in `hypr/windowrules.conf`:
 
 ```ini
-windowrulev2 = float,class:^(pavucontrol)$
-windowrulev2 = size 760 520,class:^(pavucontrol)$
-windowrulev2 = center,class:^(pavucontrol)$
+windowrule {
+    match:class = ^(pavucontrol)$
+    float = on
+    size = 760 520
+    center = on
+}
 
-windowrulev2 = float,class:^(blueman-manager)$
-windowrulev2 = center,class:^(blueman-manager)$
+windowrule {
+    match:class = ^(blueman-manager)$
+    float = on
+    center = on
+}
 
-windowrulev2 = opacity 0.94 0.88,class:^(kitty)$
+windowrule {
+    match:class = ^(kitty)$
+    opacity = 0.94 0.88
+}
 ```
+
+Op Hyprland 0.54+ is `bind = ..., togglesplit` vervangen door `bind = ..., layoutmsg, togglesplit` (dwindle-layout).
 
 ## Rofi Styling
 
@@ -695,7 +711,7 @@ Aanbevolen richting:
 
 Moet de wallpaper opnieuw toepassen.
 
-Voor `hyprpaper`:
+Voor `hyprpaper` (zoals in `scripts/apply-wallpaper.sh`):
 
 ```bash
 #!/usr/bin/env bash
@@ -703,9 +719,7 @@ set -euo pipefail
 
 WALLPAPER="$HOME/.config/hypr/big-sur/Background.jpg"
 
-hyprctl hyprpaper unload all || true
-hyprctl hyprpaper preload "$WALLPAPER"
-hyprctl hyprpaper wallpaper ",$WALLPAPER"
+hyprctl hyprpaper wallpaper ",$WALLPAPER,cover"
 ```
 
 Voor `swww`:
@@ -731,6 +745,7 @@ set -euo pipefail
 hyprctl reload
 pkill waybar || true
 waybar >/tmp/waybar-big-sur.log 2>&1 &
+scripts/apply-wallpaper.sh
 ```
 
 ### `scripts/backup-configs.sh`
@@ -767,13 +782,67 @@ cp waybar/config.jsonc ~/.config/waybar/config.jsonc
 cp waybar/style.css ~/.config/waybar/style.css
 cp kitty/kitty.conf ~/.config/kitty/kitty.conf
 cp kitty/big-sur.conf ~/.config/kitty/big-sur.conf
-mkdir -p ~/.config/hypr/big-sur
+mkdir -p ~/.config/hypr/big-sur ~/.config/big-sur/scripts
 cp assets/Background.jpg ~/.config/hypr/big-sur/Background.jpg
+cp scripts/*.sh ~/.config/big-sur/scripts/
+chmod +x ~/.config/big-sur/scripts/*.sh
 hyprctl reload
 pkill waybar && waybar &
 ```
 
 ## Troubleshooting
+
+### Configs Verschijnen Niet In Je Hyprland-sessie
+
+Als je `install.sh` vanaf **Windows (Git Bash)** hebt gedraaid, staan de bestanden in je **Windows**-profiel, bijvoorbeeld:
+
+```text
+C:\Users\<jouw-naam>\.config\hypr\
+```
+
+Hyprland op **Linux** leest `~/.config` in je **Linux**-home (bijv. `/home/<jouw-naam>/.config`), niet de Windows-map.
+
+**Oplossing (kies één):**
+
+1. **Opnieuw installeren in je Hyprland-sessie** (aanbevolen):
+
+```bash
+cd /pad/naar/big-sur-hyprland-theme
+chmod +x install.sh scripts/*.sh
+./install.sh
+```
+
+Het script toont `CONFIG_DIR` en waarschuwt als je op Windows draait.
+
+2. **Kopiëren vanaf een eerdere Windows-installatie** (dual boot / VM met gedeelde schijf):
+
+```bash
+./scripts/sync-to-linux-home.sh /mnt/c/Users/<jouw-naam>/.config
+hyprctl reload
+pkill waybar; waybar &
+```
+
+3. **Expliciet doelpad** (bijv. andere gebruiker of test):
+
+```bash
+./install.sh --config-dir "$HOME/.config"
+# of
+BIG_SUR_CONFIG_DIR="$HOME/.config" ./install.sh
+```
+
+Controleer in Hyprland waar configs staan:
+
+```bash
+echo "$HOME"
+ls -la ~/.config/hypr/hyprland.conf
+hyprctl reload
+```
+
+### Installatie Vanaf Windows (Git Bash)
+
+- Paketten (`pacman`) worden overgeslagen; alleen configs worden gekopieerd.
+- Gebruik `./install.sh` **niet** als vervanging voor installatie op Linux, tenzij je bewust naar Windows `.config` schrijft.
+- Na bevestiging (`-y`) of interactieve waarschuwing worden exacte paden getoond.
 
 ### Wallpaper Verschijnt Niet
 

@@ -1,11 +1,43 @@
 {
+  // Big Sur floating menubar — dock left, workspaces center, status right
   "layer": "top",
   "position": "top",
-  "height": 34,
-  "spacing": 8,
-  "modules-left": ["hyprland/workspaces"],
-  "modules-center": ["clock"],
-  "modules-right": ["pulseaudio", "network", "battery", "tray"],
+  "height": 36,
+  "spacing": 4,
+  "margin-top": 8,
+  "margin-left": 16,
+  "margin-right": 16,
+  "reload_style_on_change": true,
+
+  "modules-left": ["group/launchers"],
+  "modules-center": ["hyprland/workspaces"],
+  "modules-right": ["group/quick", "group/status", "clock"],
+
+  "group/launchers": {
+    "orientation": "horizontal",
+    "modules": ["custom/terminal", "custom/browser", "custom/files"]
+  },
+
+  "custom/terminal": {
+    "format": "󰆍",
+    "tooltip": true,
+    "tooltip-format": "Terminal — Super+T",
+    "on-click": "kitty"
+  },
+
+  "custom/browser": {
+    "format": "󰖟",
+    "tooltip": true,
+    "tooltip-format": "Opera GX — Super+B",
+    "on-click": "opera-gx"
+  },
+
+  "custom/files": {
+    "format": "󰝰",
+    "tooltip": true,
+    "tooltip-format": "Files — Super+E",
+    "on-click": "dolphin"
+  },
 
   "hyprland/workspaces": {
     "format": "{icon}",
@@ -15,26 +47,73 @@
       "3": "3",
       "4": "4",
       "5": "5",
-      "6": "6",
-      "7": "7",
-      "8": "8",
-      "9": "9",
-      "10": "10",
-      "urgent": "!",
+      "urgent": "◆",
       "active": "●",
       "default": "○"
     },
-    "on-click": "activate"
+    "persistent-workspaces": {
+      "*": 5
+    },
+    "on-click": "activate",
+    "on-scroll-up": "hyprland:workspace e+1",
+    "on-scroll-down": "hyprland:workspace e-1"
+  },
+
+  "group/quick": {
+    "orientation": "horizontal",
+    "modules": [
+      "custom/restart",
+      "custom/audio",
+      "custom/wifi",
+      "custom/bluetooth"
+    ]
+  },
+
+  "custom/restart": {
+    "format": "󰑐",
+    "tooltip": true,
+    "tooltip-format": "Reload session (Hyprland + Waybar)\nRight-click: restart computer (confirmation)",
+    "on-click": "bash \"$HOME/.config/big-sur/scripts/restart-session.sh\"",
+    "on-click-right": "bash \"$HOME/.config/big-sur/scripts/restart-computer.sh\""
+  },
+
+  "custom/audio": {
+    "format": "󰓃",
+    "tooltip": true,
+    "tooltip-format": "Audio settings — PulseAudio / PipeWire",
+    "on-click": "pavucontrol"
+  },
+
+  "custom/wifi": {
+    "format": "󰖩",
+    "tooltip": true,
+    "tooltip-format": "WiFi & network connections",
+    "on-click": "nm-connection-editor"
+  },
+
+  "custom/bluetooth": {
+    "format": "󰂯",
+    "tooltip": true,
+    "tooltip-format": "Bluetooth devices",
+    "on-click": "blueman-manager"
+  },
+
+  "group/status": {
+    "orientation": "horizontal",
+    "modules": ["pulseaudio", "network", "battery", "tray"]
   },
 
   "clock": {
     "format": "{:%H:%M}",
-    "tooltip-format": "<big>{:%Y %B %d}</big>\n<tt><small>{calendar}</small></tt>"
+    "format-alt": "{:%a · %d %b}",
+    "tooltip-format": "<span weight='bold' size='large'>{:%A}</span>\n{:%d %B %Y}\n<small>{calendar}</small>",
+    "interval": 30,
+    "on-click-right": "mode"
   },
 
   "pulseaudio": {
-    "format": "{icon} {volume}%",
-    "format-muted": "󰸈 muted",
+    "format": "{icon}",
+    "format-muted": "󰸈",
     "format-icons": {
       "headphone": "󰋋",
       "hands-free": "󰋎",
@@ -44,21 +123,26 @@
       "car": "󰄋",
       "default": ["󰕿", "󰖀", "󰕾"]
     },
-    "on-click": "pavucontrol"
+    "tooltip-format": "Volume: {volume}%",
+    "on-click": "pavucontrol",
+    "on-click-right": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"
   },
 
   "network": {
-    "format-wifi": "󰤨 {signalStrength}%",
-    "format-ethernet": "󰈀 connected",
-    "format-disconnected": "󰤭 offline",
-    "tooltip-format": "{ifname}: {ipaddr}/{cidr}"
+    "format-wifi": "󰤨",
+    "format-ethernet": "󰈀",
+    "format-disconnected": "󰤭",
+    "tooltip-format-wifi": "{essid} · {signalStrength}%\n{ifname}: {ipaddr}/{cidr}",
+    "tooltip-format-ethernet": "Wired · {ifname}: {ipaddr}/{cidr}",
+    "tooltip-format-disconnected": "No connection"
   },
 
   "battery": {
-    "format": "{icon} {capacity}%",
-    "format-charging": "󰂄 {capacity}%",
-    "format-plugged": "󰚥 {capacity}%",
+    "format": "{icon}",
+    "format-charging": "󰂄",
+    "format-plugged": "󰚥",
     "format-icons": ["󰂃", "󰁺", "󰁻", "󰁼", "󰁽", "󰁾", "󰁿", "󰂀", "󰂁", "󰂂", "󰁹"],
+    "tooltip-format": "{capacity}% — {time}",
     "states": {
       "warning": 30,
       "critical": 15
@@ -66,7 +150,7 @@
   },
 
   "tray": {
-    "icon-size": 16,
-    "spacing": 8
+    "icon-size": 15,
+    "spacing": 6
   }
 }
