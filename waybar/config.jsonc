@@ -43,7 +43,7 @@
     "format": "󰨞",
     "tooltip": true,
     "tooltip-format": "Visual Studio Code — Super+Shift+C",
-    "on-click": "code"
+    "on-click": "bash \"$HOME/.config/big-sur/scripts/launch-code.sh\""
   },
 
   "hyprland/workspaces": {

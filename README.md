@@ -28,17 +28,9 @@ Na installatie: druk **Super+L** om te vergrendelen. Ontgrendelen met je Linux-g
 
 Handmatig testen: `hyprlock` (leest standaard `~/.config/hypr/hyprlock.conf`).
 
-### Automatisch vergrendelen bij opstarten
+Vergrendelen gebeurt **alleen op verzoek** (**Super+L** of `hyprlock`); bij opstarten zie je direct de desktop (wallpaper, Waybar). Kitty/terminal wordt niet automatisch gestart — open met **Super+T** of via het Waybar-dockicoon.
 
-Na installatie start Hyprland met **hyprlock** in plaats van een lege desktop of terminal. Volgorde in `hypr/hyprland.conf`:
-
-1. `start-session.sh` — `hyprpaper`, korte pauze (`0.5s`), daarna `hyprlock`
-2. Waybar (na `sleep 1`; fullscreen lockscherm bedekt de menubar tot je ontgrendelt)
-3. `dunst`
-
-Kitty/terminal wordt **niet** automatisch gestart. Open een terminal met **Super+T** of via het Waybar-dockicoon.
-
-**TTY vóór Hyprland:** wat je ziet *vóór* Hyprland (Arch-prompt, logo, tekstlogin op tty1) valt **buiten** hyprlock en dit thema. **Hyprlock** helpt pas *nadat* Hyprland draait. Voor een grafisch inlogscherm zonder terminal-login gebruik je een **display manager** (aanbevolen: **SDDM**) of start je Hyprland automatisch vanuit je shell-profiel. Zie [Geen terminal bij opstarten](#geen-terminal-bij-opstarten).
+**TTY vóór Hyprland:** wat je ziet *vóór* Hyprland (Arch-prompt, logo, tekstlogin op tty1) valt buiten hyprlock en dit thema. Voor een grafisch inlogscherm zonder terminal-login gebruik je een **display manager** (aanbevolen: **SDDM**) of start je Hyprland automatisch vanuit je shell-profiel. Zie [Geen terminal bij opstarten](#geen-terminal-bij-opstarten).
 
 Na wijzigingen: `hyprctl reload` en opnieuw inloggen, of `./scripts/reload-theme.sh`.
 
@@ -164,7 +156,6 @@ big-sur-hyprland-theme/
 │   └── dunstrc
 └── scripts/
     ├── apply-wallpaper.sh
-    ├── start-session.sh
     ├── start-waybar.sh
     ├── reload-theme.sh
     ├── toggle-osk.sh
@@ -294,7 +285,7 @@ Links in de menubar: `group/launchers` met vier klikbare custom-modules (Nerd Fo
 | `custom/terminal` | 󰆍 | `kitty` | Super+T |
 | `custom/browser` | 󰖟 | `firefox` | Super+B |
 | `custom/files` | 󰝰 | `dolphin` | Super+E |
-| `custom/code` | 󰨞 | `code` | Super+Shift+C |
+| `custom/code` | 󰨞 | `launch-code.sh` | Super+Shift+C |
 
 ### Waybar CSS Richting
 
@@ -476,7 +467,7 @@ wireplumber.service
 
 Op Windows/Git Bash worden pakketten en systemd overgeslagen; voer `./install.sh` opnieuw uit in je Hyprland-sessie op Linux.
 
-Firefox staat in de officiële Arch-repositories (`firefox`). Visual Studio Code heet op Arch **`code`** (open-source build in `extra`; volledige Visual Studio IDE is alleen Windows/macOS). `install.sh` installeert beide samen met de overige pakketten. Voor een andere browser pas je `$browser` in `hypr/keybinds.conf` en `custom/browser` in `waybar/config.jsonc` aan. Voor een andere editor pas je `$editor` en `custom/code` aan.
+Firefox staat in de officiële Arch-repositories (`firefox`). Visual Studio Code heet op Arch **`code`** (open-source build in `extra`; volledige Visual Studio IDE is alleen Windows/macOS). `install.sh` installeert beide samen met de overige pakketten. Waybar en **Super+Shift+C** starten VS Code via `scripts/launch-code.sh` (fallback: `code-oss`, `codium`). Voor een andere browser pas je `$browser` in `hypr/keybinds.conf` en `custom/browser` in `waybar/config.jsonc` aan. Voor een andere editor pas je `$editor`, `launch-code.sh` en `custom/code` aan.
 
 Als pakketten niet bestaan op de distro van de gebruiker, moet de README uitleggen dat de gebruiker distro-specifieke pakketnamen moet gebruiken.
 
@@ -640,7 +631,7 @@ $mainMod = SUPER
 $terminal = kitty
 $fileManager = dolphin
 $browser = firefox
-$editor = code
+$editor = bash "$HOME/.config/big-sur/scripts/launch-code.sh"
 $menu = rofi -show drun -theme ~/.config/rofi/big-sur.rasi
 
 bind = $mainMod, T, exec, $terminal
@@ -679,7 +670,7 @@ source = ~/.config/hypr/theme.conf
 source = ~/.config/hypr/keybinds.conf
 source = ~/.config/hypr/windowrules.conf
 
-exec-once = bash -c 'S="$HOME/.config/big-sur/scripts/start-session.sh"; if [ -x "$S" ]; then exec "$S"; else hyprpaper & sleep 0.5 && exec hyprlock; fi'
+exec-once = hyprpaper
 exec-once = bash -c 'sleep 1; S="$HOME/.config/big-sur/scripts/start-waybar.sh"; if [ -x "$S" ]; then exec "$S"; else exec waybar; fi'
 exec-once = dunst
 
@@ -821,10 +812,6 @@ swww query >/dev/null 2>&1 || swww init
 swww img "$WALLPAPER" --transition-type grow --transition-duration 1
 ```
 
-### `scripts/start-session.sh`
-
-Start bij Hyprland-login: `hyprpaper`, korte pauze, daarna `hyprlock`. Wordt via `exec-once` in `hyprland.conf` aangeroepen zodat je direct het vergrendelscherm ziet (geen desktop/terminal tot ontgrendelen).
-
 ### `scripts/start-waybar.sh`
 
 Start Waybar veilig: controleert binary en `~/.config/waybar/config.jsonc`, stopt oude instanties, logt naar `~/.cache/big-sur/waybar.log`.
@@ -874,6 +861,16 @@ Handmatig:
 ```bash
 bash ~/.config/big-sur/scripts/rotate-display.sh
 ```
+
+### `scripts/launch-code.sh`
+
+Start **Visual Studio Code** met fallback voor verschillende Arch-pakketten: `code` (officiële OSS-build in `extra`), `code-oss`, of `codium`. Waybar-knop `custom/code` (󰨞) en sneltoets **Super+Shift+C** gebruiken dit script.
+
+```bash
+bash ~/.config/big-sur/scripts/launch-code.sh
+```
+
+Als geen editor gevonden wordt: desktopmelding (indien `notify-send` beschikbaar) en fout op stderr.
 
 ### `scripts/reload-theme.sh`
 
@@ -948,7 +945,7 @@ pkill waybar && waybar &
 
 ### Geen terminal bij opstarten
 
-**Symptoom:** Na boot zie je Arch-prompt → logo → **tekstlogin (tty1)**. Pas na `login` + handmatig `Hyprland` kom je op de desktop (of hyprlock).
+**Symptoom:** Na boot zie je Arch-prompt → logo → **tekstlogin (tty1)**. Pas na `login` + handmatig `Hyprland` kom je op de desktop.
 
 **Oorzaak:** Er is geen **display manager** actief; je boot naar multi-user.target en logt in op een virtuele console.
 
@@ -963,7 +960,7 @@ chmod +x scripts/enable-graphical-login.sh
 sudo reboot
 ```
 
-Kies op het SDDM-scherm sessie **Hyprland**. Hyprlock start daarna via `start-session.sh`.
+Kies op het SDDM-scherm sessie **Hyprland**. Na inloggen start wallpaper en Waybar; vergrendelen met **Super+L**.
 
 Handmatig (zelfde als het script):
 
@@ -987,7 +984,7 @@ fi
 
 Log daarna uit en opnieuw in op tty1 — Hyprland start direct. Je ziet nog wel kort de shell-prompt vóór Hyprland; SDDM is visueel netter.
 
-**Niet verwarren met hyprlock:** `start-session.sh` / hyprlock regelen alleen het **vergrendelscherm ná** Hyprland-start, niet de boot-flow vóór Hyprland.
+**Niet verwarren met hyprlock:** hyprlock (Super+L) is alleen het vergrendelscherm *ná* Hyprland-start, niet de boot-flow vóór Hyprland.
 
 **Na SDDM:** verwijder eventuele `exec Hyprland`, `startx` of `.xinitrc`-Hyprland-start uit shell-profielen.
 
@@ -1035,6 +1032,52 @@ dmesg | grep -i iwl | tail
 | Alleen ethernet werkt | Controleer BIOS: wireless enabled; kernel ≥ recent met iwlwifi |
 
 **Waybar:** quick-bar icoon 󰖩 → `nm-connection-editor`. Status-icoon 󰤨 (`network`-module) toont signaal wanneer verbonden.
+
+### Visual Studio Code start niet (Waybar 󰨞 / Super+Shift+C)
+
+**Symptoom:** Klik op het VS Code-icoon in de Waybar-dock (links) of druk **Super+Shift+C** — er gebeurt niets, of je ziet geen icoon.
+
+**Oorzaak:** Het thema startte hardcoded `code`. Op Arch kan het binaire anders heten (`code`, `code-oss`, `codium`) of het pakket is niet geïnstalleerd. Hyprland/Waybar geven dan geen duidelijke fout.
+
+**Snel herstel:**
+
+```bash
+cd /pad/naar/big-sur-hyprland-theme
+chmod +x scripts/launch-code.sh
+./install.sh          # kopieert script + configs naar ~/.config
+# of alleen het script:
+cp scripts/launch-code.sh ~/.config/big-sur/scripts/
+chmod +x ~/.config/big-sur/scripts/launch-code.sh
+hyprctl reload
+pkill waybar; ~/.config/big-sur/scripts/start-waybar.sh
+```
+
+**Diagnose:**
+
+```bash
+which code code-oss codium 2>/dev/null
+command -v code || command -v code-oss || command -v codium
+bash ~/.config/big-sur/scripts/launch-code.sh   # moet VS Code openen
+```
+
+**Pakket installeren** (kies één):
+
+```bash
+sudo pacman -S code          # Visual Studio Code (OSS) — staat in install.sh ARCH_PACKAGES
+# alternatieven:
+sudo pacman -S code-oss      # community build
+yay -S codium-bin            # VSCodium (AUR)
+```
+
+| Probleem | Oplossing |
+|----------|-----------|
+| `code: command not found` | `sudo pacman -S code` of gebruik `launch-code.sh` (valt terug op code-oss/codium) |
+| Icoon ontbreekt in Waybar | `custom/code` staat in `group/launchers`; herinstalleer configs via `./install.sh` |
+| Sneltoets werkt niet | `hyprctl reload` na wijziging in `keybinds.conf`; geen conflict — alleen **Super+Shift+C** is gebonden |
+| Klik werkt, toets niet (of omgekeerd) | Beide moeten `launch-code.sh` aanroepen; sync configs opnieuw |
+| Script niet gevonden | `./install.sh` in **Linux Hyprland-sessie** (niet vanuit Windows Git Bash) |
+
+**Waybar:** dock-icoon 󰨞 → `launch-code.sh`. **Keybind:** Super+Shift+C (zelfde launcher).
 
 ### Configs Verschijnen Niet In Je Hyprland-sessie
 
@@ -1137,6 +1180,7 @@ scripts/apply-wallpaper.sh
 | Proces crasht direct | `waybar` in terminal (fout op stderr) of log: `~/.cache/big-sur/waybar.log` |
 | Oude Waybar (< 0.9.17) | `waybar --version` — **groups** (`group/launchers`) vereisen recente Waybar |
 | Alleen iconen ontbreken | Nerd Font: `sudo pacman -S ttf-jetbrains-mono-nerd`, daarna Waybar herstarten |
+| VS Code-icoon / Super+Shift+C doet niets | `sudo pacman -S code`; test `bash ~/.config/big-sur/scripts/launch-code.sh` — zie [Visual Studio Code start niet](#visual-studio-code-start-niet-waybar--supershiftc) |
 
 **Diagnose:**
 
@@ -1151,8 +1195,9 @@ waybar   # stop met Ctrl+C na controle; fouten verschijnen in de terminal
 **Hyprland autostart** (in `~/.config/hypr/hyprland.conf` na installatie):
 
 ```ini
-exec-once = bash -c 'S="$HOME/.config/big-sur/scripts/start-session.sh"; if [ -x "$S" ]; then exec "$S"; else hyprpaper & sleep 0.5 && exec hyprlock; fi'
+exec-once = hyprpaper
 exec-once = bash -c 'sleep 1; S="$HOME/.config/big-sur/scripts/start-waybar.sh"; if [ -x "$S" ]; then exec "$S"; else exec waybar; fi'
+exec-once = dunst
 ```
 
 Veel voorkomende oorzaken:
@@ -1242,6 +1287,8 @@ Dit thema werkt op een **HP EliteBook x360** (2-in-1 business-laptop) zonder spe
 2. **Leeg batterij-icoon of 0%** — Installeer `upower`, controleer `BAT0` vs `BAT1`, herstart Waybar. Soms helpt `systemctl enable --now upower` (user-service niet altijd nodig; daemon draait system-wide).
 
 3. **WiFi werkt niet / icoon blijft los** — `./scripts/enable-network.sh`; firmware `linux-firmware`; geen iwd+NM tegelijk. Waybar 󰖩 → `nm-connection-editor` (alleen als NetworkManager actief is).
+
+3b. **VS Code start niet (󰨞 / Super+Shift+C)** — Installeer `code` (`sudo pacman -S code`) of test `bash ~/.config/big-sur/scripts/launch-code.sh`. Zie [Visual Studio Code start niet](#visual-studio-code-start-niet-waybar--supershiftc).
 
 4. **Boot vraagt terminal-login vóór desktop** — Geen SDDM/display manager. `./scripts/enable-graphical-login.sh` of `./install.sh --with-sddm`. Zie [Geen terminal bij opstarten](#geen-terminal-bij-opstarten).
 

@@ -141,4 +141,4 @@ echo "Controleer shell-profielen — verwijder regels zoals 'exec Hyprland' of '
 echo "  ~/.bash_profile  ~/.zprofile  ~/.xprofile"
 echo ""
 echo "Start opnieuw op. Kies sessie 'Hyprland' op het SDDM-scherm."
-echo "Hyprlock start daarna automatisch via start-session.sh (thema-config)."
+echo "Na inloggen: desktop met wallpaper en Waybar. Vergrendelen met Super+L (hyprlock)."
