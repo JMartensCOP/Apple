@@ -266,7 +266,7 @@ install_cursor_optional() {
       hint="$(command -v Cursor)"
     elif [ -x /usr/bin/cursor ]; then
       hint="/usr/bin/cursor"
-    elif [ -x "$HOME/.local/bin/cursor ]; then
+    elif [ -x "$HOME/.local/bin/cursor" ]; then
       hint="$HOME/.local/bin/cursor"
     else
       hint="AppImage of Flatpak (zie launch-cursor.sh)"
