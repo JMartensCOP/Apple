@@ -209,13 +209,39 @@ install_osk_optional() {
   echo "Log bij klik: ~/.cache/big-sur/osk.log"
 }
 
+spotify_available() {
+  command -v spotify >/dev/null 2>&1 && return 0
+  command -v spotify-launcher >/dev/null 2>&1 && return 0
+  [ -x /usr/bin/spotify ] && return 0
+  if command -v flatpak >/dev/null 2>&1 && flatpak info com.spotify.Client >/dev/null 2>&1; then
+    return 0
+  fi
+  if command -v pacman >/dev/null 2>&1; then
+    pacman -Q spotify >/dev/null 2>&1 && return 0
+    pacman -Q spotify-launcher >/dev/null 2>&1 && return 0
+  fi
+  return 1
+}
+
 install_spotify_optional() {
   if is_windows_shell || ! is_linux; then
     return 0
   fi
 
-  if command -v spotify >/dev/null 2>&1 || command -v spotify-launcher >/dev/null 2>&1; then
-    echo "Spotify: binary gevonden."
+  if spotify_available; then
+    local hint=""
+    if command -v spotify >/dev/null 2>&1; then
+      hint="$(command -v spotify)"
+    elif command -v spotify-launcher >/dev/null 2>&1; then
+      hint="$(command -v spotify-launcher)"
+    elif [ -x /usr/bin/spotify ]; then
+      hint="/usr/bin/spotify"
+    elif command -v flatpak >/dev/null 2>&1 && flatpak info com.spotify.Client >/dev/null 2>&1; then
+      hint="flatpak com.spotify.Client"
+    else
+      hint="pacman-pakket (binary zoeken in PATH)"
+    fi
+    echo "Spotify: client gevonden ($hint)."
     return 0
   fi
 
@@ -233,28 +259,36 @@ install_spotify_optional() {
     if $FORCE; then
       aur_flags+=(--noconfirm)
     fi
-    echo "Probeer spotify te installeren met $aur_helper..."
-    if $aur_helper -S "${aur_flags[@]}" spotify; then
-      if command -v spotify >/dev/null 2>&1 || command -v spotify-launcher >/dev/null 2>&1; then
-        echo "Spotify geïnstalleerd."
-        return 0
+    local pkg
+    for pkg in spotify spotify-launcher; do
+      echo "Probeer $pkg te installeren met $aur_helper..."
+      if $aur_helper -S "${aur_flags[@]}" "$pkg"; then
+        if spotify_available; then
+          echo "Spotify geïnstalleerd via $pkg."
+          return 0
+        fi
+        echo "$pkg geïnstalleerd maar binary nog niet in PATH — open een nieuwe shell of log opnieuw in."
+      else
+        echo "$aur_helper installatie van $pkg mislukt of geannuleerd."
       fi
-    else
-      echo "$aur_helper installatie mislukt of geannuleerd."
-    fi
+    done
   fi
 
   echo ""
   echo "=== Spotify ==="
-  echo "Spotify staat niet in de officiële Arch-repositories (alleen AUR)."
-  echo "Waybar 󰓇 en Super+Shift+S gebruiken: bash \"$PROJECT_DIR/scripts/launch-spotify.sh\""
+  echo "Spotify staat niet in de officiële Arch-repositories (alleen AUR / Flatpak)."
+  echo "Waybar 󰓇 en Super+Shift+S: bash \"$PROJECT_DIR/scripts/launch-spotify.sh\""
+  echo "Test: bash \"$PROJECT_DIR/scripts/test-spotify.sh\""
+  echo "Log bij klik: ~/.cache/big-sur/spotify.log"
   echo ""
   if [ -n "$aur_helper" ]; then
     echo "Installeer handmatig: $aur_helper -S spotify"
     echo "Alternatief: $aur_helper -S spotify-launcher"
+    echo "Of Flatpak: flatpak install flathub com.spotify.Client"
   else
     echo "Installeer yay of paru, daarna: yay -S spotify"
     echo "Of: yay -S spotify-launcher"
+    echo "Of Flatpak: flatpak install flathub com.spotify.Client"
   fi
 }
 

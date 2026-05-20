@@ -165,6 +165,7 @@ big-sur-hyprland-theme/
     ├── diagnose-convertible.sh
     ├── launch-code.sh
     ├── launch-spotify.sh
+    ├── test-spotify.sh
     ├── backup-configs.sh
     ├── enable-audio.sh
     ├── enable-network.sh
@@ -641,7 +642,7 @@ $terminal = kitty
 $fileManager = dolphin
 $browser = firefox
 $editor = bash "$HOME/.config/big-sur/scripts/launch-code.sh"
-$spotify = bash "$HOME/.config/big-sur/scripts/launch-spotify.sh"
+$spotify = bash -lc '/usr/bin/bash "$HOME/.config/big-sur/scripts/launch-spotify.sh"'
 $menu = rofi -show drun -theme ~/.config/rofi/big-sur.rasi
 
 bind = $mainMod, T, exec, $terminal
@@ -883,13 +884,21 @@ Als geen editor gevonden wordt: desktopmelding (indien `notify-send` beschikbaar
 
 ### `scripts/launch-spotify.sh`
 
-Start **Spotify** met fallback: `spotify` (AUR-pakket `spotify`) of `spotify-launcher`. Waybar-knop `custom/spotify` (󰓇) en sneltoets **Super+Shift+S** gebruiken dit script.
+Start **Spotify** met fallback: `spotify`, `spotify-launcher`, `/usr/bin/spotify`, of Flatpak `com.spotify.Client`. Waybar-knop `custom/spotify` (󰓇) en sneltoets **Super+Shift+S** gebruiken dit script.
+
+Elke klik logt naar `~/.cache/big-sur/spotify.log` en stuurt een **notify-send** (Bezig…, gestart, of fout met install-hint).
 
 ```bash
 bash ~/.config/big-sur/scripts/launch-spotify.sh
+bash ~/.config/big-sur/scripts/test-spotify.sh   # toont welke client + start
+tail -f ~/.cache/big-sur/spotify.log
 ```
 
-Als geen client gevonden wordt: desktopmelding en AUR-hint (`yay -S spotify`).
+Als geen client gevonden wordt: desktopmelding en AUR/Flatpak-hint (`yay -S spotify`).
+
+### `scripts/test-spotify.sh`
+
+Controleert of `launch-spotify.sh` in `~/.config/big-sur/scripts/` staat, welke Spotify-client gebruikt zou worden, en voert daarna een launch uit. Gebruik dit als Waybar 󰓇 niets lijkt te doen.
 
 ### `scripts/reload-theme.sh`
 
@@ -1182,6 +1191,53 @@ yay -S codium-bin            # VSCodium (AUR)
 
 **Waybar:** dock-icoon 󰨞 → `launch-code.sh`. **Keybind:** Super+Shift+C (zelfde launcher).
 
+### Spotify start niet (Waybar 󰓇 / Super+Shift+S)
+
+**Symptoom:** Klik op het Spotify-icoon in de Waybar-dock (links) of druk **Super+Shift+S** — er gebeurt niets, of je ziet geen melding.
+
+**Oorzaak:** Spotify staat **niet** in de officiële Arch-repositories (alleen AUR of Flatpak). Zonder geïnstalleerde client doet een oude hardcoded `exec spotify` niets; zonder `launch-spotify.sh` in `~/.config/big-sur/scripts/` of zonder `bash -lc` in Waybar wordt het script soms niet aangeroepen (geen regels in `spotify.log`).
+
+**Snel herstel:**
+
+```bash
+cd /pad/naar/big-sur-hyprland-theme
+chmod +x scripts/launch-spotify.sh scripts/test-spotify.sh
+./install.sh          # kopieert scripts + configs naar ~/.config
+# of alleen scripts:
+cp scripts/launch-spotify.sh scripts/test-spotify.sh ~/.config/big-sur/scripts/
+chmod +x ~/.config/big-sur/scripts/*.sh
+hyprctl reload
+pkill waybar; ~/.config/big-sur/scripts/start-waybar.sh
+```
+
+**Diagnose:**
+
+```bash
+bash ~/.config/big-sur/scripts/test-spotify.sh
+tail -20 ~/.cache/big-sur/spotify.log
+```
+
+Geen regels in `spotify.log` na een Waybar-klik → het script wordt niet aangeroepen (ontbrekend pad of oude Waybar-config). Wel regels + melding “Geen Spotify” → client installeren.
+
+**Client installeren** (kies één):
+
+```bash
+yay -S spotify              # AUR — binary spotify (install.sh probeert dit)
+yay -S spotify-launcher     # alternatief
+flatpak install flathub com.spotify.Client
+```
+
+| Probleem | Oplossing |
+|----------|-----------|
+| `spotify: command not found` | `yay -S spotify` of gebruik `launch-spotify.sh` (Flatpak/AUR-fallback) |
+| Icoon ontbreekt in Waybar | `custom/spotify` in `group/launchers`; herinstalleer via `./install.sh` |
+| Sneltoets werkt niet | `hyprctl reload` na wijziging in `keybinds.conf` |
+| Klik werkt, toets niet (of omgekeerd) | Beide moeten `launch-spotify.sh` aanroepen; sync configs opnieuw |
+| Script niet gevonden | `./install.sh` in **Linux Hyprland-sessie** of `sync-to-linux-home.sh` |
+| Geen notify bij klik | Update Waybar `on-click` naar `bash -lc '/usr/bin/bash "$HOME/.config/big-sur/scripts/launch-spotify.sh"'` |
+
+**Waybar:** dock-icoon 󰓇 → `launch-spotify.sh` via `bash -lc`. **Keybind:** Super+Shift+S (zelfde launcher).
+
 ### Configs Verschijnen Niet In Je Hyprland-sessie
 
 Als je `install.sh` vanaf **Windows (Git Bash)** hebt gedraaid, staan de bestanden in je **Windows**-profiel, bijvoorbeeld:
@@ -1284,6 +1340,7 @@ scripts/apply-wallpaper.sh
 | Oude Waybar (< 0.9.17) | `waybar --version` — **groups** (`group/launchers`) vereisen recente Waybar |
 | Alleen iconen ontbreken | Nerd Font: `sudo pacman -S ttf-jetbrains-mono-nerd`, daarna Waybar herstarten |
 | VS Code-icoon / Super+Shift+C doet niets | `sudo pacman -S code`; test `bash ~/.config/big-sur/scripts/launch-code.sh` — zie [Visual Studio Code start niet](#visual-studio-code-start-niet-waybar--supershiftc) |
+| Spotify-icoon / Super+Shift+S doet niets | `yay -S spotify`; test `bash ~/.config/big-sur/scripts/test-spotify.sh` — zie [Spotify start niet](#spotify-start-niet-waybar--supershifts) |
 
 **Diagnose:**
 
@@ -1392,6 +1449,8 @@ Dit thema werkt op een **HP EliteBook x360** (2-in-1 business-laptop) zonder spe
 3b. **Bluetooth werkt niet** — `./scripts/enable-bluetooth.sh`; `rfkill unblock bluetooth`; `bluetoothctl power on`. Waybar 󰂯 → `open-bluetooth.sh`. Zie [Bluetooth / BlueZ werkt niet](#bluetooth--bluez-werkt-niet-hyprland--hp-elitebook-x360).
 
 3c. **VS Code start niet (󰨞 / Super+Shift+C)** — Installeer `code` (`sudo pacman -S code`) of test `bash ~/.config/big-sur/scripts/launch-code.sh`. Zie [Visual Studio Code start niet](#visual-studio-code-start-niet-waybar--supershiftc).
+
+3d. **Spotify start niet (󰓇 / Super+Shift+S)** — Installeer `yay -S spotify` of test `bash ~/.config/big-sur/scripts/test-spotify.sh`. Zie [Spotify start niet](#spotify-start-niet-waybar--supershifts).
 
 4. **Boot vraagt terminal-login vóór desktop** — `./install.sh` op Linux (autostart via `setup-bash-profile.sh`). SDDM uit? `sudo systemctl disable --now sddm.service`. Zie [Geen terminal bij opstarten](#geen-terminal-bij-opstarten).
 
