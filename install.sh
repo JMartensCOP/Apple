@@ -5,7 +5,6 @@ PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIG_DIR=""
 BACKUP_DIR=""
 FORCE=false
-WITH_SDDM=false
 
 usage() {
   cat <<'EOF'
@@ -13,7 +12,6 @@ Usage: ./install.sh [options]
 
 Options:
   --config-dir PATH   Install configs here (default: $XDG_CONFIG_HOME or $HOME/.config)
-  --with-sddm         Install SDDM and enable graphical login (no TTY login before Hyprland)
   -y, --yes           Skip confirmation when target may not be your Hyprland session
   -h, --help          Show this help
 
@@ -22,11 +20,6 @@ Environment:
 
 On Linux Hyprland, run from a terminal in your session (not Git Bash on Windows):
   ./install.sh
-
-Graphical login (SDDM) without manual TTY login:
-  ./install.sh --with-sddm
-  # or after install:
-  ./scripts/enable-graphical-login.sh
 
 If you already installed from Windows/Git Bash, copy configs into Linux home:
   ./scripts/sync-to-linux-home.sh /mnt/c/Users/YOUR_USER/.config
@@ -41,10 +34,6 @@ while [ $# -gt 0 ]; do
       ;;
     -y|--yes)
       FORCE=true
-      shift
-      ;;
-    --with-sddm)
-      WITH_SDDM=true
       shift
       ;;
     -h|--help)
@@ -237,38 +226,26 @@ enable_network_services() {
   bash "$script" -y
 }
 
-install_display_manager() {
-  local script="$PROJECT_DIR/scripts/enable-graphical-login.sh"
+setup_shell_profile() {
+  local script="$CONFIG_DIR/big-sur/scripts/setup-bash-profile.sh"
 
-  if is_windows_shell || ! is_linux; then
-    echo "SDDM: overgeslagen (alleen op Linux Hyprland/Arch)."
-    echo "  Zie README: Geen terminal bij opstarten"
+  if is_windows_shell; then
+    echo "Shell-profiel: overgeslagen (Windows/Git Bash)."
+    echo "  Op Linux na install: bash \"$script\" -y"
+    return 0
+  fi
+
+  if ! is_linux; then
+    echo "Shell-profiel: overgeslagen (geen Linux)."
     return 0
   fi
 
   if [ ! -f "$script" ]; then
-    echo "SDDM: $script ontbreekt; overgeslagen."
+    echo "Shell-profiel: $script ontbreekt; overgeslagen."
     return 0
   fi
 
-  chmod +x "$script" 2>/dev/null || true
-  if [ "$WITH_SDDM" = true ]; then
-    bash "$script" -y
-  elif [ "$FORCE" = true ]; then
-    echo "SDDM overgeslagen (-y). Grafisch inloggen: ./scripts/enable-graphical-login.sh"
-  else
-    echo ""
-    echo "Grafisch inloggen (SDDM) voorkomt handmatige TTY-login vóór Hyprland."
-    read -r -p "SDDM nu installeren en inschakelen? [y/N] " answer
-    case "$answer" in
-      y | Y | yes | YES)
-        bash "$script" -y
-        ;;
-      *)
-        echo "SDDM overgeslagen. Later: ./scripts/enable-graphical-login.sh"
-        ;;
-    esac
-  fi
+  bash "$script" -y
 }
 
 verify_hyprland_session_desktop() {
@@ -279,9 +256,9 @@ verify_hyprland_session_desktop() {
   fi
 
   if [ -f "$desktop" ]; then
-    echo "Hyprland-sessie: $desktop (SDDM/GDM kan Hyprland tonen)"
+    echo "Hyprland-sessie: $desktop"
   elif command -v Hyprland >/dev/null 2>&1 || command -v hyprland >/dev/null 2>&1; then
-    echo "WAARSCHUWING: $desktop ontbreekt — herinstalleer hyprland voor display manager."
+    echo "WAARSCHUWING: $desktop ontbreekt — herinstalleer het hyprland-pakket."
   fi
 }
 
@@ -345,7 +322,6 @@ install_dependencies
 install_osk_optional
 enable_audio_services
 enable_network_services
-install_display_manager
 verify_hyprland_session_desktop
 
 mkdir -p "$BACKUP_DIR"
@@ -381,6 +357,9 @@ cp "$PROJECT_DIR/assets/Background.jpg" "$WALLPAPER_DEST"
 cp "$PROJECT_DIR/assets/Lockscreen.jpg" "$LOCKSCREEN_DEST"
 cp "$PROJECT_DIR/scripts/"*.sh "$CONFIG_DIR/big-sur/scripts/"
 chmod +x "$CONFIG_DIR/big-sur/scripts/"*.sh
+
+setup_shell_profile
+
 cp "$PROJECT_DIR/hypr/"*.conf "$CONFIG_DIR/hypr/"
 cp "$PROJECT_DIR/waybar/config.jsonc" "$CONFIG_DIR/waybar/config.jsonc"
 cp "$PROJECT_DIR/waybar/style.css" "$CONFIG_DIR/waybar/style.css"
@@ -425,8 +404,9 @@ echo "  $CONFIG_DIR/big-sur/scripts/start-waybar.sh"
 echo "  $PROJECT_DIR/scripts/reload-theme.sh"
 echo "  $PROJECT_DIR/scripts/apply-wallpaper.sh"
 echo ""
-echo "Geen TTY-login vóór desktop:"
-echo "  ./scripts/enable-graphical-login.sh   # SDDM (grafisch inloggen → Hyprland)"
+echo "Hyprland na login (tty1):"
+echo "  $CONFIG_DIR/big-sur/scripts/setup-bash-profile.sh   # als autostart ontbreekt"
+echo "  Log uit en opnieuw in op tty1, of: reboot"
 echo ""
 echo "WiFi / NetworkManager:"
 echo "  $CONFIG_DIR/big-sur/scripts/enable-network.sh"

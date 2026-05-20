@@ -30,7 +30,7 @@ Handmatig testen: `hyprlock` (leest standaard `~/.config/hypr/hyprlock.conf`).
 
 Vergrendelen gebeurt **alleen op verzoek** (**Super+L** of `hyprlock`); bij opstarten zie je direct de desktop (wallpaper, Waybar). Kitty/terminal wordt niet automatisch gestart — open met **Super+T** of via het Waybar-dockicoon.
 
-**TTY vóór Hyprland:** wat je ziet *vóór* Hyprland (Arch-prompt, logo, tekstlogin op tty1) valt buiten hyprlock en dit thema. Voor een grafisch inlogscherm zonder terminal-login gebruik je een **display manager** (aanbevolen: **SDDM**) of start je Hyprland automatisch vanuit je shell-profiel. Zie [Geen terminal bij opstarten](#geen-terminal-bij-opstarten).
+**TTY vóór Hyprland:** wat je ziet *vóór* Hyprland (Arch-prompt, logo, tekstlogin op tty1) valt buiten hyprlock en dit thema. Standaard start **install.sh** Hyprland automatisch via `~/.bash_profile` en `start-hyprland.sh` (alleen op tty1). Zie [Geen terminal bij opstarten](#geen-terminal-bij-opstarten).
 
 Na wijzigingen: `hyprctl reload` en opnieuw inloggen, of `./scripts/reload-theme.sh`.
 
@@ -157,6 +157,8 @@ big-sur-hyprland-theme/
 └── scripts/
     ├── apply-wallpaper.sh
     ├── start-waybar.sh
+    ├── start-hyprland.sh
+    ├── setup-bash-profile.sh
     ├── reload-theme.sh
     ├── toggle-osk.sh
     ├── rotate-display.sh
@@ -499,15 +501,7 @@ chmod +x install.sh scripts/*.sh
 
 Voer installatie uit **in je Linux Hyprland-sessie**, niet alleen vanuit Git Bash op Windows (zie Troubleshooting).
 
-Optioneel (grafisch inloggen, geen TTY vóór Hyprland):
-
-```bash
-./install.sh --with-sddm
-# of later:
-./scripts/enable-graphical-login.sh
-```
-
-Optioneel:
+Na installatie start Hyprland automatisch na login op tty1 (`setup-bash-profile.sh` + `start-hyprland.sh`). Herstart daarna of log opnieuw in.
 
 ```bash
 chmod +x uninstall.sh
@@ -887,17 +881,30 @@ bash ~/.config/big-sur/scripts/enable-network.sh --connect "JouwSSID"
 
 Wordt automatisch aangeroepen door `install.sh` op Linux.
 
+### `scripts/start-hyprland.sh`
+
+Start Hyprland op **tty1** na login (geen display manager). Wordt aangeroepen vanuit `~/.bash_profile`. Slaat over als `WAYLAND_DISPLAY` al gezet is of je niet op `/dev/tty1` zit. Probeert `Hyprland`, daarna `hyprland`.
+
+### `scripts/setup-bash-profile.sh`
+
+Voegt een gemarkeerd blok toe aan `~/.bash_profile` dat `~/.config/big-sur/scripts/start-hyprland.sh` aanroept. Idempotent (overslaat als markers al bestaan). Waarschuwt om SDDM uit te schakelen als je die eerder installeerde. Wordt automatisch door `install.sh` aangeroepen op Linux (`-y`).
+
+```bash
+bash ~/.config/big-sur/scripts/setup-bash-profile.sh
+bash ~/.config/big-sur/scripts/setup-bash-profile.sh -y   # non-interactief
+```
+
 ### `scripts/enable-graphical-login.sh`
 
-Installeert **SDDM** op Arch (optioneel **qt6ct** voor Qt6-thema), maakt basis `/etc/sddm.conf.d/`, schakelt `sddm.service` in. SDDM toont **Hyprland** als `/usr/share/wayland-sessions/hyprland.desktop` bestaat (pakket `hyprland`).
+**Niet onderdeel van de standaard Big Sur-installatie** (`install.sh` roept dit niet aan). Optioneel handmatig: installeert **SDDM** op Arch (optioneel **qt6ct** voor Qt6-thema), maakt basis `/etc/sddm.conf.d/`, schakelt `sddm.service` in.
 
 ```bash
 ./scripts/enable-graphical-login.sh
-# of tijdens install:
-./install.sh --with-sddm
 ```
 
-Na installatie: **herstart**. Verwijder `exec Hyprland` uit `~/.bash_profile` / `~/.zprofile` om dubbele sessies te voorkomen.
+Als je SDDM gebruikt: schakel autostart in `~/.bash_profile` uit (markers `# >>> big-sur-hyprland autostart >>>`) om dubbele Hyprland-sessies te voorkomen.
+
+Na installatie: **herstart**. Verwijder `exec Hyprland` uit `~/.bash_profile` / `~/.zprofile` als je van shell-autostart naar SDDM gaat.
 
 ### `scripts/backup-configs.sh`
 
@@ -947,48 +954,54 @@ pkill waybar && waybar &
 
 **Symptoom:** Na boot zie je Arch-prompt → logo → **tekstlogin (tty1)**. Pas na `login` + handmatig `Hyprland` kom je op de desktop.
 
-**Oorzaak:** Er is geen **display manager** actief; je boot naar multi-user.target en logt in op een virtuele console.
+**Oorzaak:** Hyprland start niet automatisch na shell-login, of SDDM blokkeert de tty1-flow.
 
-**Oplossing A — SDDM (aanbevolen, grafisch inlogscherm):**
+**Standaard (Big Sur-thema):** `install.sh` kopieert `start-hyprland.sh` en roept `setup-bash-profile.sh -y` aan. Dat voegt aan `~/.bash_profile` toe:
+
+```bash
+# >>> big-sur-hyprland autostart >>>
+# Start Hyprland na login op tty1 (geen SDDM)
+if [ -z "${WAYLAND_DISPLAY:-}" ] && [ "$(tty 2>/dev/null || echo)" = "/dev/tty1" ]; then
+  exec bash "$HOME/.config/big-sur/scripts/start-hyprland.sh"
+fi
+# <<< big-sur-hyprland autostart <<<
+```
+
+Log daarna uit en opnieuw in op tty1, of herstart:
 
 ```bash
 cd /pad/naar/big-sur-hyprland-theme
-chmod +x scripts/enable-graphical-login.sh
-./scripts/enable-graphical-login.sh
-# of in één keer met thema-installatie:
-./install.sh --with-sddm
+chmod +x install.sh scripts/*.sh
+./install.sh
 sudo reboot
 ```
 
-Kies op het SDDM-scherm sessie **Hyprland**. Na inloggen start wallpaper en Waybar; vergrendelen met **Super+L**.
-
-Handmatig (zelfde als het script):
+Handmatig (als autostart ontbreekt):
 
 ```bash
-sudo pacman -S --needed sddm hyprland
-sudo pacman -S --needed qt6ct   # optioneel — Qt6-thema; niet qt6-ct
-sudo systemctl enable --now sddm.service
-ls /usr/share/wayland-sessions/hyprland.desktop   # moet bestaan
+bash ~/.config/big-sur/scripts/setup-bash-profile.sh -y
 sudo reboot
 ```
 
-**Oplossing B — Hyprland automatisch na shell-login (geen SDDM):**
-
-Als je liever geen display manager installeert, voeg **één** regel toe aan `~/.bash_profile` of `~/.zprofile` (niet beide):
+**SDDM uitschakelen:** dit thema installeert **geen** SDDM. Had je SDDM eerder ingeschakeld, zet die uit vóór je op tty1 inlogt:
 
 ```bash
-if [ -z "$DISPLAY" ] && [ "$(tty)" = "/dev/tty1" ]; then
-  exec Hyprland
-fi
+sudo systemctl disable --now sddm.service
+sudo reboot
 ```
-
-Log daarna uit en opnieuw in op tty1 — Hyprland start direct. Je ziet nog wel kort de shell-prompt vóór Hyprland; SDDM is visueel netter.
 
 **Niet verwarren met hyprlock:** hyprlock (Super+L) is alleen het vergrendelscherm *ná* Hyprland-start, niet de boot-flow vóór Hyprland.
 
-**Na SDDM:** verwijder eventuele `exec Hyprland`, `startx` of `.xinitrc`-Hyprland-start uit shell-profielen.
+**Optioneel — SDDM (grafisch inlogscherm, niet standaard):**
 
-**Alternatief:** `greetd` + `tuigreet` (minimalistisch). SDDM is eenvoudiger voor Hyprland op Arch; zie [Arch Wiki SDDM](https://wiki.archlinux.org/title/SDDM).
+```bash
+./scripts/enable-graphical-login.sh
+sudo reboot
+```
+
+Kies op het SDDM-scherm sessie **Hyprland**. Verwijder het Big Sur-blok uit `~/.bash_profile` om dubbele starts te voorkomen.
+
+**Alternatief:** `greetd` + `tuigreet` (minimalistisch). Zie [Arch Wiki SDDM](https://wiki.archlinux.org/title/SDDM) als je een display manager wilt.
 
 ### WiFi werkt niet (Hyprland / HP EliteBook x360)
 
@@ -1290,7 +1303,7 @@ Dit thema werkt op een **HP EliteBook x360** (2-in-1 business-laptop) zonder spe
 
 3b. **VS Code start niet (󰨞 / Super+Shift+C)** — Installeer `code` (`sudo pacman -S code`) of test `bash ~/.config/big-sur/scripts/launch-code.sh`. Zie [Visual Studio Code start niet](#visual-studio-code-start-niet-waybar--supershiftc).
 
-4. **Boot vraagt terminal-login vóór desktop** — Geen SDDM/display manager. `./scripts/enable-graphical-login.sh` of `./install.sh --with-sddm`. Zie [Geen terminal bij opstarten](#geen-terminal-bij-opstarten).
+4. **Boot vraagt terminal-login vóór desktop** — `./install.sh` op Linux (autostart via `setup-bash-profile.sh`). SDDM uit? `sudo systemctl disable --now sddm.service`. Zie [Geen terminal bij opstarten](#geen-terminal-bij-opstarten).
 
 5. **Touchscreen reageert niet / alleen touchpad** — Controleer in Hyprland: `hyprctl devices` (touch-device zichtbaar?). Soms ontbreken firmware-pakketten (`linux-firmware`).
 
@@ -1340,7 +1353,7 @@ Gebruik **niet** `systemctl enable wvkbd` — er is geen `wvkbd.service` op Arch
 
 ### SDDM / grafisch inloggen: `error target not found qt6-ct`
 
-**Symptoom:** `error: target not found: qt6-ct` tijdens `./install.sh --with-sddm` of `./scripts/enable-graphical-login.sh`.
+**Symptoom:** `error: target not found: qt6-ct` tijdens `./scripts/enable-graphical-login.sh`.
 
 **Oorzaak:** Het pakket heet op Arch **`qt6ct`** (zonder streepje), repository **extra** — niet `qt6-ct`. SDDM zelf heeft **qt6ct niet nodig**; het is alleen een optionele Qt6-configuratietool.
 
@@ -1465,6 +1478,8 @@ Genereer alle bestanden volgens de projectstructuur:
 - rofi/big-sur.rasi
 - dunst/dunstrc
 - scripts/apply-wallpaper.sh
+- scripts/start-hyprland.sh
+- scripts/setup-bash-profile.sh
 - scripts/reload-theme.sh
 - scripts/backup-configs.sh
 

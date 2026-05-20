@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# NOT used by install.sh — optional manual setup only, not part of the Big Sur theme default.
 # Install and enable SDDM for graphical login → Hyprland (no manual TTY login).
 set -euo pipefail
 
