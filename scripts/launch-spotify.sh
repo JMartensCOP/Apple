@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Start Spotify (Arch AUR, Flatpak). Waybar 󰓇 / Super+Shift+S.
+# Start Spotify (spotify-launcher via pacman, Flatpak-fallback). Waybar 󰓇 / Super+Shift+S.
 set -uo pipefail
 
 LOG_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/big-sur"
@@ -25,7 +25,7 @@ notify_msg "Bezig…"
 
 find_launcher() {
   local candidate path
-  for candidate in spotify spotify-launcher; do
+  for candidate in spotify-launcher spotify; do
     if path="$(command -v "$candidate" 2>/dev/null)" && [ -n "$path" ]; then
       log "gevonden: $candidate → $path"
       echo "$path"
@@ -56,7 +56,7 @@ spotify_running() {
 
 launcher="$(find_launcher || true)"
 if [ -z "$launcher" ]; then
-  msg="Geen Spotify — installeer: yay -S spotify  (of spotify-launcher / flatpak install flathub com.spotify.Client)"
+  msg="Geen Spotify — installeer: sudo pacman -S --needed spotify-launcher  (of flatpak install flathub com.spotify.Client)"
   notify_msg "$msg"
   log "geen launcher beschikbaar"
   echo "$msg" >&2
@@ -85,7 +85,7 @@ if spotify_running; then
   exit 0
 fi
 
-notify_msg "Start mislukt — zie spotify.log (yay -S spotify?)"
+notify_msg "Start mislukt — zie spotify.log (pacman -S spotify-launcher?)"
 log "start mislukt — geen spotify-proces na 0.8s"
 echo "Spotify start mislukt. Log: $LOG_FILE" >&2
 exit 1

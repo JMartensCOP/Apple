@@ -15,7 +15,7 @@
 
   "group/launchers": {
     "orientation": "horizontal",
-    "modules": ["custom/terminal", "custom/browser", "custom/files", "custom/code", "custom/spotify"]
+    "modules": ["custom/terminal", "custom/browser", "custom/files", "custom/code", "custom/cursor", "custom/spotify"]
   },
 
   "custom/terminal": {
@@ -44,6 +44,13 @@
     "tooltip": true,
     "tooltip-format": "Visual Studio Code — Super+Shift+C",
     "on-click": "bash \"$HOME/.config/big-sur/scripts/launch-code.sh\""
+  },
+
+  "custom/cursor": {
+    "format": "󰏘",
+    "tooltip": true,
+    "tooltip-format": "Cursor IDE — Super+Shift+U",
+    "on-click": "bash -lc '/usr/bin/bash \"$HOME/.config/big-sur/scripts/launch-cursor.sh\"'"
   },
 
   "custom/spotify": {
@@ -77,6 +84,7 @@
     "orientation": "horizontal",
     "modules": [
       "custom/keyboard",
+      "custom/fullscreen",
       "custom/restart",
       "custom/audio",
       "custom/wifi",
@@ -89,6 +97,13 @@
     "tooltip": true,
     "tooltip-format": "Schermtoetsenbord (wvkbd/onboard)\nKlik: aan/uit",
     "on-click": "bash -lc '/usr/bin/bash \"$HOME/.config/big-sur/scripts/toggle-osk.sh\"'"
+  },
+
+  "custom/fullscreen": {
+    "format": "󰊓",
+    "tooltip": true,
+    "tooltip-format": "Volledig scherm — Super+F",
+    "on-click": "hyprctl dispatch fullscreen"
   },
 
   "custom/restart": {

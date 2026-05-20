@@ -25,7 +25,7 @@ echo ""
 
 echo "--- Beschikbare Spotify-clients ---"
 chosen=""
-for b in spotify spotify-launcher; do
+for b in spotify-launcher spotify; do
   if command -v "$b" >/dev/null 2>&1; then
     echo "  OK  $b → $(command -v "$b")"
     [ -z "$chosen" ] && chosen="$b"
@@ -50,7 +50,7 @@ else
   echo "  —   flatpak (niet gevonden)"
 fi
 if command -v pacman >/dev/null 2>&1; then
-  for pkg in spotify spotify-launcher; do
+  for pkg in spotify-launcher spotify; do
     if pacman -Q "$pkg" >/dev/null 2>&1; then
       echo "  OK  pacman -Q $pkg (pakket geïnstalleerd)"
     fi
@@ -62,8 +62,7 @@ if [ -n "$chosen" ]; then
   echo "Launcher zou gebruiken: $chosen"
 else
   echo "Geen Spotify-client gevonden."
-  echo "  yay -S spotify              # AUR (aanbevolen)"
-  echo "  yay -S spotify-launcher     # alternatief"
+  echo "  sudo pacman -S --needed spotify-launcher   # Arch extra (install.sh)"
   echo "  flatpak install flathub com.spotify.Client"
 fi
 echo ""

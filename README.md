@@ -164,6 +164,7 @@ big-sur-hyprland-theme/
     ├── test-osk.sh
     ├── diagnose-convertible.sh
     ├── launch-code.sh
+    ├── launch-cursor.sh
     ├── launch-spotify.sh
     ├── test-spotify.sh
     ├── backup-configs.sh
@@ -277,6 +278,7 @@ Rechts vóór de status-pill: `group/quick` met klikbare custom-modules:
 | Module | Icoon | Klik | Actie |
 |--------|-------|------|-------|
 | `custom/keyboard` | 󰌌 | Links | `toggle-osk.sh` — schermtoetsenbord (wvkbd) aan/uit |
+| `custom/fullscreen` | 󰊓 | Links | `hyprctl dispatch fullscreen` — volledig scherm (toggle); ook **Super+F** |
 | `custom/restart` | 󰑐 | Links | `~/.config/big-sur/scripts/restart-session.sh` — Hyprland + Waybar + wallpaper herladen |
 | `custom/restart` | 󰑐 | Rechts | `restart-computer.sh` — bevestiging (rofi/wofi) en `loginctl reboot` |
 | `custom/audio` | 󰓃 | Links | `pavucontrol` |
@@ -285,7 +287,7 @@ Rechts vóór de status-pill: `group/quick` met klikbare custom-modules:
 
 `install.sh` kopieert alle scripts naar `~/.config/big-sur/scripts/`. Bij handmatige installatie: zelfde map aanmaken en `scripts/*.sh` daarheen kopiëren (`chmod +x`).
 
-Links in de menubar: `group/launchers` met vijf klikbare custom-modules (Nerd Font-iconen) die dezelfde apps starten als de Hyprland-keybinds:
+Links in de menubar: `group/launchers` met zes klikbare custom-modules (Nerd Font-iconen) die dezelfde apps starten als de Hyprland-keybinds:
 
 | Module | Icoon | `on-click` | Keybind |
 |--------|-------|------------|---------|
@@ -293,6 +295,7 @@ Links in de menubar: `group/launchers` met vijf klikbare custom-modules (Nerd Fo
 | `custom/browser` | 󰖟 | `firefox` | Super+B |
 | `custom/files` | 󰝰 | `dolphin` | Super+E |
 | `custom/code` | 󰨞 | `launch-code.sh` | Super+Shift+C |
+| `custom/cursor` | 󰏘 | `launch-cursor.sh` | Super+Shift+U |
 | `custom/spotify` | 󰓇 | `launch-spotify.sh` | Super+Shift+S |
 
 ### Waybar CSS Richting
@@ -302,7 +305,7 @@ Zie `waybar/style.css`. Kernpunten:
 - `window#waybar` — floating bar: `border-radius: 14px`, glass panel `rgba(23, 23, 56, 0.58)`, box-shadow;
 - `#launchers` — dock-pill met hover-glow (cyaan) en active-state (paars);
 - `#workspaces` — gecentreerde pill, active workspace gradient `#67c7e8 → #b46cff`;
-- `#quick` — quick-action pill (zelfde stijl als launchers): toetsenbord, herstart, audio, wifi, bluetooth;
+- `#quick` — quick-action pill (zelfde stijl als launchers): toetsenbord, volledig scherm, herstart, audio, wifi, bluetooth;
 - `#status` — gegroepeerde status-pill; icon-only modules met tooltips;
 - `#clock` — aparte pill rechts, klik rechts wisselt datum/tijd.
 
@@ -449,6 +452,7 @@ firefox
 code
 ttf-jetbrains-mono-nerd
 inter-font
+spotify-launcher
 ```
 
 **Schermtoetsenbord (wvkbd):** staat **niet** in de officiële Arch-repositories — alleen [AUR](https://aur.archlinux.org/packages/wvkbd). Fallback **onboard** via `pacman` (in `install.sh`). Geen systemd-service; start via Waybar 󰌌 of `toggle-osk.sh`.
@@ -459,18 +463,30 @@ yay -S wvkbd-deskintl    # aanbevolen op vouw-/touchscherm (HP EliteBook x360)
 yay -S wvkbd             # mobintl layout → binary wvkbd-mobintl
 ```
 
-**Spotify:** staat **niet** in de officiële Arch-repositories — alleen [AUR](https://aur.archlinux.org/packages/spotify) (`spotify` of `spotify-launcher`). `install.sh` probeert `yay -S spotify` / `paru -S spotify` als een AUR-helper aanwezig is (`-y` voor non-interactief). Waybar 󰓇 en **Super+Shift+S** starten via `scripts/launch-spotify.sh`.
+**Spotify:** **`spotify-launcher`** staat in Arch **extra** ([pakket](https://archlinux.org/packages/extra/x86_64/spotify-launcher/)). `install.sh` installeert het via `sudo pacman -S --needed` samen met de overige `ARCH_PACKAGES` (geen volledige `-Syu` bij elke run). Waybar 󰓇 en **Super+Shift+S** starten via `scripts/launch-spotify.sh` (voorkeur: binary `spotify-launcher`).
 
 ```bash
-yay -S spotify           # officiële Spotify-client (binary: spotify)
-# of:
-yay -S spotify-launcher  # alternatieve launcher (binary: spotify-launcher)
+sudo pacman -S --needed spotify-launcher   # handmatig, zelfde als install.sh
 ```
+
+Alternatief: AUR-pakket `spotify` of Flatpak `com.spotify.Client` — `launch-spotify.sh` ondersteunt die als fallback.
+
+**Cursor IDE:** staat **niet** in Arch **extra** — alleen [AUR](https://aur.archlinux.org/packages/cursor-bin) (`cursor-bin`, `cursor-appimage`) of een **AppImage** van [cursor.com](https://cursor.com). `install.sh` probeert optioneel `cursor-bin` via `yay`/`paru` (met `./install.sh -y` zonder bevestigingsvragen voor AUR). Waybar 󰏘 en **Super+Shift+U** starten via `scripts/launch-cursor.sh`.
+
+```bash
+yay -S cursor-bin              # AUR (aanbevolen op Arch)
+# of:
+yay -S cursor-appimage
+# of AppImage:
+# Download van https://cursor.com → ~/Applications/Cursor-*.AppImage && chmod +x
+```
+
+`launch-cursor.sh` zoekt: `cursor`, `Cursor`, `/usr/bin/cursor`, `~/.local/bin/cursor`, AppImages in `~/Applications` en `~/Downloads`, en Flatpak `com.todesktop.*`.
 
 Voor Arch (officiële repos):
 
 ```bash
-sudo pacman -S hyprland waybar kitty hyprpaper rofi-wayland dunst wl-clipboard grim slurp brightnessctl playerctl pavucontrol pipewire pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-firmware sof-firmware networkmanager network-manager-applet iw wireless-regdb linux-firmware bluez bluez-utils blueman upower dolphin firefox code ttf-jetbrains-mono-nerd inter-font onboard
+sudo pacman -S hyprland waybar kitty hyprpaper rofi-wayland dunst wl-clipboard grim slurp brightnessctl playerctl pavucontrol pipewire pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-firmware sof-firmware networkmanager network-manager-applet iw wireless-regdb linux-firmware bluez bluez-utils blueman upower dolphin firefox code ttf-jetbrains-mono-nerd inter-font onboard spotify-launcher
 ```
 
 **Audio (Arch):** gebruik **PipeWire** met `pipewire-pulse` (PulseAudio-compatibiliteit voor Waybar `pulseaudio`-module en `pavucontrol`). Het legacy `pulseaudio`-pakket is niet nodig. Voor Intel-laptops (bijv. HP EliteBook) installeert `install.sh` ook `alsa-firmware`, `sof-firmware` en `alsa-utils`. `install.sh` schakelt de officiële user-units in via `scripts/enable-audio.sh` en probeert laptop-speakers als standaard uitgang via `scripts/fix-audio.sh --auto`:
@@ -485,7 +501,7 @@ Op Windows/Git Bash worden pakketten en systemd overgeslagen; voer `./install.sh
 
 **Bluetooth (Arch):** `bluez` levert `bluetoothd`; `bluez-utils` levert `bluetoothctl`; `blueman` is de GUI. `install.sh` schakelt de stack in via `scripts/enable-bluetooth.sh` (`systemctl enable --now bluetooth`, `rfkill unblock bluetooth`, adapter aan).
 
-Firefox staat in de officiële Arch-repositories (`firefox`). Visual Studio Code heet op Arch **`code`** (open-source build in `extra`; volledige Visual Studio IDE is alleen Windows/macOS). `install.sh` installeert beide samen met de overige pakketten. Waybar en **Super+Shift+C** starten VS Code via `scripts/launch-code.sh` (fallback: `code-oss`, `codium`). Spotify is **AUR-only** — zie hierboven; Waybar 󰓇 en **Super+Shift+S** via `scripts/launch-spotify.sh`. Voor een andere browser pas je `$browser` in `hypr/keybinds.conf` en `custom/browser` in `waybar/config.jsonc` aan. Voor een andere editor pas je `$editor`, `launch-code.sh` en `custom/code` aan.
+Firefox staat in de officiële Arch-repositories (`firefox`). Visual Studio Code heet op Arch **`code`** (open-source build in `extra`; volledige Visual Studio IDE is alleen Windows/macOS). `install.sh` installeert beide samen met de overige pakketten. Waybar en **Super+Shift+C** starten VS Code via `scripts/launch-code.sh` (fallback: `code-oss`, `codium`). **Cursor IDE** via AUR/AppImage — zie hierboven; Waybar 󰏘 en **Super+Shift+U** via `scripts/launch-cursor.sh`. Spotify via **`spotify-launcher`** in `extra` — zie hierboven; Waybar 󰓇 en **Super+Shift+S** via `scripts/launch-spotify.sh`. Voor een andere browser pas je `$browser` in `hypr/keybinds.conf` en `custom/browser` in `waybar/config.jsonc` aan. Voor een andere editor pas je `$editor`, `launch-code.sh` en `custom/code` aan; voor Cursor: `$cursor`, `launch-cursor.sh` en `custom/cursor`.
 
 Als pakketten niet bestaan op de distro van de gebruiker, moet de README uitleggen dat de gebruiker distro-specifieke pakketnamen moet gebruiken.
 
@@ -643,6 +659,7 @@ $fileManager = dolphin
 $browser = firefox
 $editor = bash "$HOME/.config/big-sur/scripts/launch-code.sh"
 $spotify = bash -lc '/usr/bin/bash "$HOME/.config/big-sur/scripts/launch-spotify.sh"'
+$cursor = bash -lc '/usr/bin/bash "$HOME/.config/big-sur/scripts/launch-cursor.sh"'
 $menu = rofi -show drun -theme ~/.config/rofi/big-sur.rasi
 
 bind = $mainMod, T, exec, $terminal
@@ -652,6 +669,7 @@ bind = $mainMod, E, exec, $fileManager
 bind = $mainMod, B, exec, $browser
 bind = $mainMod SHIFT, C, exec, $editor
 bind = $mainMod SHIFT, S, exec, $spotify
+bind = $mainMod SHIFT, U, exec, $cursor
 bind = $mainMod, Space, exec, $menu
 bind = $mainMod, L, exec, hyprlock
 bind = $mainMod, V, togglefloating
@@ -882,9 +900,22 @@ bash ~/.config/big-sur/scripts/launch-code.sh
 
 Als geen editor gevonden wordt: desktopmelding (indien `notify-send` beschikbaar) en fout op stderr.
 
+### `scripts/launch-cursor.sh`
+
+Start **Cursor IDE** met voorkeur `cursor`/`Cursor` in PATH, `/usr/bin/cursor`, `~/.local/bin/cursor`, AppImages in `~/Applications` en `~/Downloads`, of Flatpak `com.todesktop.*`. Waybar-knop `custom/cursor` (󰏘) en sneltoets **Super+Shift+U** gebruiken dit script.
+
+Elke klik logt naar `~/.cache/big-sur/cursor.log` en stuurt een **notify-send** (Bezig…, gestart, of fout met install-hint).
+
+```bash
+bash ~/.config/big-sur/scripts/launch-cursor.sh
+tail -f ~/.cache/big-sur/cursor.log
+```
+
+Als geen client gevonden wordt: desktopmelding en AUR/AppImage-hint (`yay -S cursor-bin` of download van [cursor.com](https://cursor.com)).
+
 ### `scripts/launch-spotify.sh`
 
-Start **Spotify** met fallback: `spotify`, `spotify-launcher`, `/usr/bin/spotify`, of Flatpak `com.spotify.Client`. Waybar-knop `custom/spotify` (󰓇) en sneltoets **Super+Shift+S** gebruiken dit script.
+Start **Spotify** met voorkeur `spotify-launcher` (pacman/extra), daarna `spotify`, `/usr/bin/spotify`, of Flatpak `com.spotify.Client`. Waybar-knop `custom/spotify` (󰓇) en sneltoets **Super+Shift+S** gebruiken dit script.
 
 Elke klik logt naar `~/.cache/big-sur/spotify.log` en stuurt een **notify-send** (Bezig…, gestart, of fout met install-hint).
 
@@ -894,7 +925,7 @@ bash ~/.config/big-sur/scripts/test-spotify.sh   # toont welke client + start
 tail -f ~/.cache/big-sur/spotify.log
 ```
 
-Als geen client gevonden wordt: desktopmelding en AUR/Flatpak-hint (`yay -S spotify`).
+Als geen client gevonden wordt: desktopmelding en pacman/Flatpak-hint (`sudo pacman -S --needed spotify-launcher`).
 
 ### `scripts/test-spotify.sh`
 
@@ -1195,7 +1226,7 @@ yay -S codium-bin            # VSCodium (AUR)
 
 **Symptoom:** Klik op het Spotify-icoon in de Waybar-dock (links) of druk **Super+Shift+S** — er gebeurt niets, of je ziet geen melding.
 
-**Oorzaak:** Spotify staat **niet** in de officiële Arch-repositories (alleen AUR of Flatpak). Zonder geïnstalleerde client doet een oude hardcoded `exec spotify` niets; zonder `launch-spotify.sh` in `~/.config/big-sur/scripts/` of zonder `bash -lc` in Waybar wordt het script soms niet aangeroepen (geen regels in `spotify.log`).
+**Oorzaak:** `spotify-launcher` niet geïnstalleerd of niet in PATH, of `launch-spotify.sh` ontbreekt in `~/.config/big-sur/scripts/`. Zonder script of zonder `bash -lc` in Waybar wordt het script soms niet aangeroepen (geen regels in `spotify.log`).
 
 **Snel herstel:**
 
@@ -1222,14 +1253,13 @@ Geen regels in `spotify.log` na een Waybar-klik → het script wordt niet aanger
 **Client installeren** (kies één):
 
 ```bash
-yay -S spotify              # AUR — binary spotify (install.sh probeert dit)
-yay -S spotify-launcher     # alternatief
-flatpak install flathub com.spotify.Client
+sudo pacman -S --needed spotify-launcher   # Arch extra (install.sh)
+flatpak install flathub com.spotify.Client # alternatief
 ```
 
 | Probleem | Oplossing |
 |----------|-----------|
-| `spotify: command not found` | `yay -S spotify` of gebruik `launch-spotify.sh` (Flatpak/AUR-fallback) |
+| `spotify-launcher: command not found` | `sudo pacman -S --needed spotify-launcher` of `./install.sh` op Linux |
 | Icoon ontbreekt in Waybar | `custom/spotify` in `group/launchers`; herinstalleer via `./install.sh` |
 | Sneltoets werkt niet | `hyprctl reload` na wijziging in `keybinds.conf` |
 | Klik werkt, toets niet (of omgekeerd) | Beide moeten `launch-spotify.sh` aanroepen; sync configs opnieuw |
@@ -1237,6 +1267,31 @@ flatpak install flathub com.spotify.Client
 | Geen notify bij klik | Update Waybar `on-click` naar `bash -lc '/usr/bin/bash "$HOME/.config/big-sur/scripts/launch-spotify.sh"'` |
 
 **Waybar:** dock-icoon 󰓇 → `launch-spotify.sh` via `bash -lc`. **Keybind:** Super+Shift+S (zelfde launcher).
+
+### Cursor IDE start niet (Waybar 󰏘 / Super+Shift+U)
+
+**Symptoom:** Klik op het Cursor-icoon in de Waybar-dock of druk **Super+Shift+U** — er gebeurt niets, of je ziet een melding “Geen Cursor”.
+
+**Oorzaak:** Cursor staat niet in Arch **extra**; `cursor-bin` (AUR) of AppImage ontbreekt, of `launch-cursor.sh` staat niet in `~/.config/big-sur/scripts/`.
+
+**Client installeren** (kies één):
+
+```bash
+yay -S cursor-bin                          # AUR (aanbevolen)
+./install.sh -y                            # probeert cursor-bin via yay/paru
+# AppImage van https://cursor.com:
+chmod +x ~/Applications/Cursor-*.AppImage
+```
+
+| Probleem | Oplossing |
+|----------|-----------|
+| `cursor: command not found` | `yay -S cursor-bin` of AppImage in `~/Applications` |
+| Icoon ontbreekt in Waybar | `custom/cursor` in `group/launchers`; herinstalleer via `./install.sh` |
+| Sneltoets werkt niet | `hyprctl reload` na wijziging in `keybinds.conf` |
+| Geen notify bij klik | Update Waybar `on-click` naar `bash -lc` + `launch-cursor.sh` |
+| Start mislukt na install | `tail ~/.cache/big-sur/cursor.log` — AppImage soms `--no-sandbox` nodig (script doet dit) |
+
+**Waybar:** dock-icoon 󰏘 → `launch-cursor.sh`. **Keybind:** Super+Shift+U.
 
 ### Configs Verschijnen Niet In Je Hyprland-sessie
 
@@ -1340,7 +1395,8 @@ scripts/apply-wallpaper.sh
 | Oude Waybar (< 0.9.17) | `waybar --version` — **groups** (`group/launchers`) vereisen recente Waybar |
 | Alleen iconen ontbreken | Nerd Font: `sudo pacman -S ttf-jetbrains-mono-nerd`, daarna Waybar herstarten |
 | VS Code-icoon / Super+Shift+C doet niets | `sudo pacman -S code`; test `bash ~/.config/big-sur/scripts/launch-code.sh` — zie [Visual Studio Code start niet](#visual-studio-code-start-niet-waybar--supershiftc) |
-| Spotify-icoon / Super+Shift+S doet niets | `yay -S spotify`; test `bash ~/.config/big-sur/scripts/test-spotify.sh` — zie [Spotify start niet](#spotify-start-niet-waybar--supershifts) |
+| Spotify-icoon / Super+Shift+S doet niets | `sudo pacman -S --needed spotify-launcher` of `./install.sh`; test `bash ~/.config/big-sur/scripts/test-spotify.sh` — zie [Spotify start niet](#spotify-start-niet-waybar--supershifts) |
+| Cursor-icoon / Super+Shift+U doet niets | `yay -S cursor-bin` of AppImage van [cursor.com](https://cursor.com); test `bash ~/.config/big-sur/scripts/launch-cursor.sh` — zie [Cursor IDE start niet](#cursor-ide-start-niet-waybar--supershiftu) |
 
 **Diagnose:**
 
@@ -1450,7 +1506,9 @@ Dit thema werkt op een **HP EliteBook x360** (2-in-1 business-laptop) zonder spe
 
 3c. **VS Code start niet (󰨞 / Super+Shift+C)** — Installeer `code` (`sudo pacman -S code`) of test `bash ~/.config/big-sur/scripts/launch-code.sh`. Zie [Visual Studio Code start niet](#visual-studio-code-start-niet-waybar--supershiftc).
 
-3d. **Spotify start niet (󰓇 / Super+Shift+S)** — Installeer `yay -S spotify` of test `bash ~/.config/big-sur/scripts/test-spotify.sh`. Zie [Spotify start niet](#spotify-start-niet-waybar--supershifts).
+3d. **Spotify start niet (󰓇 / Super+Shift+S)** — `./install.sh` op Linux (installeert `spotify-launcher`) of test `bash ~/.config/big-sur/scripts/test-spotify.sh`. Zie [Spotify start niet](#spotify-start-niet-waybar--supershifts).
+
+3e. **Cursor start niet (󰏘 / Super+Shift+U)** — `yay -S cursor-bin`, `./install.sh -y`, of AppImage van [cursor.com](https://cursor.com). Test `bash ~/.config/big-sur/scripts/launch-cursor.sh`. Zie [Cursor IDE start niet](#cursor-ide-start-niet-waybar--supershiftu).
 
 4. **Boot vraagt terminal-login vóór desktop** — `./install.sh` op Linux (autostart via `setup-bash-profile.sh`). SDDM uit? `sudo systemctl disable --now sddm.service`. Zie [Geen terminal bij opstarten](#geen-terminal-bij-opstarten).
 

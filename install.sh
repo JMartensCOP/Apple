@@ -155,6 +155,8 @@ install_dependencies() {
     return 0
   fi
 
+  # Spotify: spotify-launcher zit in ARCH_PACKAGES (Arch extra). Geen volledige -Syu
+  # bij elke install — --needed installeert alleen ontbrekende pakketten.
   echo "Installeer benodigde pakketten via pacman..."
   sudo pacman -S --needed "${ARCH_PACKAGES[@]}"
 }
@@ -210,8 +212,8 @@ install_osk_optional() {
 }
 
 spotify_available() {
-  command -v spotify >/dev/null 2>&1 && return 0
   command -v spotify-launcher >/dev/null 2>&1 && return 0
+  command -v spotify >/dev/null 2>&1 && return 0
   [ -x /usr/bin/spotify ] && return 0
   if command -v flatpak >/dev/null 2>&1 && flatpak info com.spotify.Client >/dev/null 2>&1; then
     return 0
@@ -223,17 +225,126 @@ spotify_available() {
   return 1
 }
 
-install_spotify_optional() {
+cursor_available() {
+  command -v cursor >/dev/null 2>&1 && return 0
+  command -v Cursor >/dev/null 2>&1 && return 0
+  [ -x /usr/bin/cursor ] && return 0
+  [ -x "$HOME/.local/bin/cursor" ] && return 0
+  local pattern path
+  shopt -s nullglob
+  for pattern in \
+    "$HOME/Applications/cursor"*.AppImage \
+    "$HOME/Applications/Cursor"*.AppImage \
+    "$HOME/Downloads/cursor"*.AppImage \
+    "$HOME/Downloads/Cursor"*.AppImage; do
+    for path in $pattern; do
+      [ -f "$path" ] && return 0
+    done
+  done
+  shopt -u nullglob
+  if command -v flatpak >/dev/null 2>&1; then
+    flatpak info com.todesktop.230313mzl4w4u92 >/dev/null 2>&1 && return 0
+    flatpak list --app 2>/dev/null | grep -q '^com\.todesktop\.' && return 0
+  fi
+  if command -v pacman >/dev/null 2>&1; then
+    pacman -Q cursor-bin >/dev/null 2>&1 && return 0
+    pacman -Q cursor-appimage >/dev/null 2>&1 && return 0
+  fi
+  return 1
+}
+
+install_cursor_optional() {
+  if is_windows_shell || ! is_linux; then
+    return 0
+  fi
+
+  if cursor_available; then
+    local hint=""
+    if command -v cursor >/dev/null 2>&1; then
+      hint="$(command -v cursor)"
+    elif command -v Cursor >/dev/null 2>&1; then
+      hint="$(command -v Cursor)"
+    elif [ -x /usr/bin/cursor ]; then
+      hint="/usr/bin/cursor"
+    elif [ -x "$HOME/.local/bin/cursor ]; then
+      hint="$HOME/.local/bin/cursor"
+    else
+      hint="AppImage of Flatpak (zie launch-cursor.sh)"
+    fi
+    echo "Cursor IDE: client gevonden ($hint)."
+    return 0
+  fi
+
+  local yay_flags=(--needed)
+  if [ "$FORCE" = true ]; then
+    yay_flags+=(--noconfirm)
+  fi
+
+  if command -v yay >/dev/null 2>&1; then
+    echo ""
+    echo "=== Cursor IDE (AUR via yay) ==="
+    echo "Cursor staat niet in officiële Arch-repos — probeer cursor-bin..."
+    if yay -S "${yay_flags[@]}" cursor-bin; then
+      if cursor_available; then
+        echo "Cursor IDE: cursor-bin geïnstalleerd."
+        return 0
+      fi
+    else
+      echo "cursor-bin mislukt — probeer cursor-appimage..."
+      if yay -S "${yay_flags[@]}" cursor-appimage; then
+        if cursor_available; then
+          echo "Cursor IDE: cursor-appimage geïnstalleerd."
+          return 0
+        fi
+      fi
+    fi
+  elif command -v paru >/dev/null 2>&1; then
+    echo ""
+    echo "=== Cursor IDE (AUR via paru) ==="
+    local paru_flags=(--needed)
+    [ "$FORCE" = true ] && paru_flags+=(--noconfirm)
+    if paru -S "${paru_flags[@]}" cursor-bin || paru -S "${paru_flags[@]}" cursor-appimage; then
+      if cursor_available; then
+        echo "Cursor IDE: geïnstalleerd via paru."
+        return 0
+      fi
+    fi
+  fi
+
+  report_cursor_status
+}
+
+report_cursor_status() {
+  if is_windows_shell || ! is_linux; then
+    return 0
+  fi
+
+  if cursor_available; then
+    return 0
+  fi
+
+  echo ""
+  echo "=== Cursor IDE ==="
+  echo "Cursor staat niet in Arch extra — alleen AUR (cursor-bin / cursor-appimage) of AppImage."
+  echo "Met yay: yay -S cursor-bin   (of: yay -S cursor-appimage)"
+  echo "Met paru: paru -S cursor-bin"
+  echo "AppImage: download van https://cursor.com → ~/Applications/Cursor-*.AppImage (chmod +x)"
+  echo "Waybar 󰏘 en Super+Shift+U: bash \"$PROJECT_DIR/scripts/launch-cursor.sh\""
+  echo "Log bij klik: ~/.cache/big-sur/cursor.log"
+  echo "Optioneel auto-install: ./install.sh -y   (met yay/paru)"
+}
+
+report_spotify_status() {
   if is_windows_shell || ! is_linux; then
     return 0
   fi
 
   if spotify_available; then
     local hint=""
-    if command -v spotify >/dev/null 2>&1; then
-      hint="$(command -v spotify)"
-    elif command -v spotify-launcher >/dev/null 2>&1; then
+    if command -v spotify-launcher >/dev/null 2>&1; then
       hint="$(command -v spotify-launcher)"
+    elif command -v spotify >/dev/null 2>&1; then
+      hint="$(command -v spotify)"
     elif [ -x /usr/bin/spotify ]; then
       hint="/usr/bin/spotify"
     elif command -v flatpak >/dev/null 2>&1 && flatpak info com.spotify.Client >/dev/null 2>&1; then
@@ -245,51 +356,14 @@ install_spotify_optional() {
     return 0
   fi
 
-  local aur_helper=""
-  local aur_flags=(--needed)
-  if command -v yay >/dev/null 2>&1; then
-    aur_helper=yay
-  elif command -v paru >/dev/null 2>&1; then
-    aur_helper=paru
-  fi
-
-  if [ -n "$aur_helper" ]; then
-    echo ""
-    echo "=== Spotify (AUR) ==="
-    if $FORCE; then
-      aur_flags+=(--noconfirm)
-    fi
-    local pkg
-    for pkg in spotify spotify-launcher; do
-      echo "Probeer $pkg te installeren met $aur_helper..."
-      if $aur_helper -S "${aur_flags[@]}" "$pkg"; then
-        if spotify_available; then
-          echo "Spotify geïnstalleerd via $pkg."
-          return 0
-        fi
-        echo "$pkg geïnstalleerd maar binary nog niet in PATH — open een nieuwe shell of log opnieuw in."
-      else
-        echo "$aur_helper installatie van $pkg mislukt of geannuleerd."
-      fi
-    done
-  fi
-
   echo ""
   echo "=== Spotify ==="
-  echo "Spotify staat niet in de officiële Arch-repositories (alleen AUR / Flatpak)."
+  echo "spotify-launcher hoort via pacman geïnstalleerd te zijn (install.sh ARCH_PACKAGES)."
+  echo "Handmatig: sudo pacman -S --needed spotify-launcher"
   echo "Waybar 󰓇 en Super+Shift+S: bash \"$PROJECT_DIR/scripts/launch-spotify.sh\""
   echo "Test: bash \"$PROJECT_DIR/scripts/test-spotify.sh\""
   echo "Log bij klik: ~/.cache/big-sur/spotify.log"
-  echo ""
-  if [ -n "$aur_helper" ]; then
-    echo "Installeer handmatig: $aur_helper -S spotify"
-    echo "Alternatief: $aur_helper -S spotify-launcher"
-    echo "Of Flatpak: flatpak install flathub com.spotify.Client"
-  else
-    echo "Installeer yay of paru, daarna: yay -S spotify"
-    echo "Of: yay -S spotify-launcher"
-    echo "Of Flatpak: flatpak install flathub com.spotify.Client"
-  fi
+  echo "Alternatief: flatpak install flathub com.spotify.Client"
 }
 
 enable_audio_services() {
@@ -434,6 +508,7 @@ ARCH_PACKAGES=(
   ttf-jetbrains-mono-nerd
   inter-font
   onboard
+  spotify-launcher
 )
 
 resolve_config_dir
@@ -456,7 +531,8 @@ confirm_target_if_needed
 
 install_dependencies
 install_osk_optional
-install_spotify_optional
+install_cursor_optional
+report_spotify_status
 enable_audio_services
 enable_network_services
 enable_bluetooth_services

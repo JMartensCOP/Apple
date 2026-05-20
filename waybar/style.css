@@ -38,6 +38,7 @@ window#waybar {
 #launchers #custom-browser,
 #launchers #custom-files,
 #launchers #custom-code,
+#launchers #custom-cursor,
 #launchers #custom-spotify {
   color: #d8dee9;
   font-size: 15px;
@@ -52,6 +53,7 @@ window#waybar {
 #launchers #custom-browser:hover,
 #launchers #custom-files:hover,
 #launchers #custom-code:hover,
+#launchers #custom-cursor:hover,
 #launchers #custom-spotify:hover {
   color: #f5f7fa;
   background: rgba(103, 199, 232, 0.20);
@@ -62,6 +64,7 @@ window#waybar {
 #launchers #custom-browser:active,
 #launchers #custom-files:active,
 #launchers #custom-code:active,
+#launchers #custom-cursor:active,
 #launchers #custom-spotify:active {
   background: rgba(180, 108, 255, 0.28);
   color: #f5f7fa;
@@ -118,6 +121,7 @@ window#waybar {
 }
 
 #quick #custom-keyboard,
+#quick #custom-fullscreen,
 #quick #custom-restart,
 #quick #custom-audio,
 #quick #custom-wifi,
@@ -132,6 +136,7 @@ window#waybar {
 }
 
 #quick #custom-keyboard:hover,
+#quick #custom-fullscreen:hover,
 #quick #custom-restart:hover,
 #quick #custom-audio:hover,
 #quick #custom-wifi:hover,
@@ -142,6 +147,7 @@ window#waybar {
 }
 
 #quick #custom-keyboard:active,
+#quick #custom-fullscreen:active,
 #quick #custom-restart:active,
 #quick #custom-audio:active,
 #quick #custom-wifi:active,
