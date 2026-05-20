@@ -25,6 +25,7 @@ backup_path() {
 
 backup_path "$CONFIG_DIR/hypr/hyprland.conf"
 backup_path "$CONFIG_DIR/hypr/hyprpaper.conf"
+backup_path "$CONFIG_DIR/hypr/hyprlock.conf"
 backup_path "$CONFIG_DIR/hypr/theme.conf"
 backup_path "$CONFIG_DIR/hypr/keybinds.conf"
 backup_path "$CONFIG_DIR/hypr/windowrules.conf"
@@ -35,5 +36,6 @@ backup_path "$CONFIG_DIR/kitty/big-sur.conf"
 backup_path "$CONFIG_DIR/rofi/big-sur.rasi"
 backup_path "$CONFIG_DIR/dunst/dunstrc"
 backup_path "$CONFIG_DIR/hypr/big-sur/Background.jpg"
+backup_path "$CONFIG_DIR/hypr/big-sur/Lockscreen.jpg"
 
 echo "Backup complete: $BACKUP_DIR"

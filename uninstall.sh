@@ -15,6 +15,7 @@ read -r -p "Continue? [y/N] " answer
 case "$answer" in
   y|Y|yes|YES)
     rm -f "$CONFIG_DIR/hypr/big-sur/Background.jpg"
+    rm -f "$CONFIG_DIR/hypr/big-sur/Lockscreen.jpg"
     rm -f "$CONFIG_DIR/kitty/big-sur.conf"
     rm -f "$CONFIG_DIR/rofi/big-sur.rasi"
     echo "Theme-specific files removed."

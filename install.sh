@@ -188,6 +188,7 @@ ARCH_PACKAGES=(
   waybar
   kitty
   hyprpaper
+  hyprlock
   rofi-wayland
   dunst
   wl-clipboard
@@ -221,6 +222,11 @@ if [ ! -f "$PROJECT_DIR/assets/Background.jpg" ]; then
   exit 1
 fi
 
+if [ ! -f "$PROJECT_DIR/assets/Lockscreen.jpg" ]; then
+  echo "Missing assets/Lockscreen.jpg (lock screen wallpaper; see README)"
+  exit 1
+fi
+
 print_environment_summary
 confirm_target_if_needed
 
@@ -246,6 +252,7 @@ backup_path() {
 
 backup_path "$CONFIG_DIR/hypr/hyprland.conf"
 backup_path "$CONFIG_DIR/hypr/hyprpaper.conf"
+backup_path "$CONFIG_DIR/hypr/hyprlock.conf"
 backup_path "$CONFIG_DIR/waybar/config.jsonc"
 backup_path "$CONFIG_DIR/waybar/style.css"
 backup_path "$CONFIG_DIR/kitty/kitty.conf"
@@ -254,7 +261,9 @@ backup_path "$CONFIG_DIR/rofi/big-sur.rasi"
 backup_path "$CONFIG_DIR/dunst/dunstrc"
 
 WALLPAPER_DEST="$CONFIG_DIR/hypr/big-sur/Background.jpg"
+LOCKSCREEN_DEST="$CONFIG_DIR/hypr/big-sur/Lockscreen.jpg"
 cp "$PROJECT_DIR/assets/Background.jpg" "$WALLPAPER_DEST"
+cp "$PROJECT_DIR/assets/Lockscreen.jpg" "$LOCKSCREEN_DEST"
 cp "$PROJECT_DIR/scripts/"*.sh "$CONFIG_DIR/big-sur/scripts/"
 chmod +x "$CONFIG_DIR/big-sur/scripts/"*.sh
 cp "$PROJECT_DIR/hypr/"*.conf "$CONFIG_DIR/hypr/"
@@ -279,6 +288,8 @@ echo "Config-map (gebruik deze paden in je Hyprland-sessie):"
 echo "  $CONFIG_DIR/hypr/hyprland.conf"
 echo "  $CONFIG_DIR/hypr/hyprpaper.conf"
 echo "  $WALLPAPER_DEST  (bron: assets/Background.jpg)"
+echo "  $LOCKSCREEN_DEST  (bron: assets/Lockscreen.jpg)"
+echo "  $CONFIG_DIR/hypr/hyprlock.conf"
 echo "  $CONFIG_DIR/waybar/config.jsonc"
 echo "  $CONFIG_DIR/waybar/style.css"
 echo "  $CONFIG_DIR/kitty/kitty.conf"

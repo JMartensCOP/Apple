@@ -6,9 +6,27 @@ De wallpaper voor dit project staat in de repo als:
 
 ```text
 assets/Background.jpg
+assets/Lockscreen.jpg
 ```
 
-Bij installatie wordt deze gekopieerd naar `~/.config/hypr/big-sur/Background.jpg` (of je gekozen `CONFIG_DIR`). Hyprland laadt de achtergrond via **hyprpaper** (`hypr/hyprpaper.conf`).
+Bij installatie wordt de wallpaper gekopieerd naar `~/.config/hypr/big-sur/Background.jpg` (of je gekozen `CONFIG_DIR`). Hyprland laadt de achtergrond via **hyprpaper** (`hypr/hyprpaper.conf`).
+
+De lockscreen-afbeelding wordt gekopieerd naar `~/.config/hypr/big-sur/Lockscreen.jpg`. Zonder dit bestand stopt `install.sh`. Vervang `assets/Lockscreen.jpg` door je eigen Big Sur-stijl achtergrond (zelfde map als de repo-assets).
+
+## Lockscreen (hyprlock)
+
+Het thema gebruikt **[hyprlock](https://wiki.hyprland.org/Hypr-Ecosystem/hyprlock/)** voor een macOS-achtig vergrendelscherm: grote digitale klok (`$TIME12`), datum eronder, gebruikersnaam en wachtwoordveld.
+
+| Item | Waarde |
+|------|--------|
+| Sneltoets | **Super+L** |
+| Config | `hypr/hyprlock.conf` → `~/.config/hypr/hyprlock.conf` |
+| Achtergrond | `~/.config/hypr/big-sur/Lockscreen.jpg` |
+| Lettertype | Inter (via `inter-font` in `install.sh`) |
+
+Na installatie: druk **Super+L** om te vergrendelen. Ontgrendelen met je Linux-gebruikerswachtwoord (PAM). Op Arch wordt het `hyprlock`-PAM-profiel meegeleverd.
+
+Handmatig testen: `hyprlock` (leest standaard `~/.config/hypr/hyprlock.conf`).
 
 ## Doel Van Het Project
 
@@ -111,10 +129,12 @@ big-sur-hyprland-theme/
 ├── install.sh
 ├── uninstall.sh
 ├── assets/
-│   └── Background.jpg
+│   ├── Background.jpg
+│   └── Lockscreen.jpg
 ├── hypr/
 │   ├── hyprland.conf
 │   ├── hyprpaper.conf
+│   ├── hyprlock.conf
 │   ├── keybinds.conf
 │   ├── windowrules.conf
 │   └── theme.conf
@@ -580,6 +600,7 @@ bind = $mainMod, M, exit
 bind = $mainMod, E, exec, $fileManager
 bind = $mainMod, B, exec, $browser
 bind = $mainMod, Space, exec, $menu
+bind = $mainMod, L, exec, hyprlock
 bind = $mainMod, V, togglefloating
 bind = $mainMod, F, fullscreen
 
