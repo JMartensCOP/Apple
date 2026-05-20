@@ -130,6 +130,7 @@ big-sur-hyprland-theme/
 │   └── dunstrc
 └── scripts/
     ├── apply-wallpaper.sh
+    ├── start-waybar.sh
     ├── reload-theme.sh
     ├── backup-configs.sh
     └── sync-to-linux-home.sh
@@ -595,7 +596,7 @@ source = ~/.config/hypr/theme.conf
 source = ~/.config/hypr/keybinds.conf
 source = ~/.config/hypr/windowrules.conf
 
-exec-once = waybar
+exec-once = bash -c 'sleep 1; S="$HOME/.config/big-sur/scripts/start-waybar.sh"; if [ -x "$S" ]; then exec "$S"; else exec waybar; fi'
 exec-once = hyprpaper
 exec-once = dunst
 
@@ -737,19 +738,13 @@ swww query >/dev/null 2>&1 || swww init
 swww img "$WALLPAPER" --transition-type grow --transition-duration 1
 ```
 
+### `scripts/start-waybar.sh`
+
+Start Waybar veilig: controleert binary en `~/.config/waybar/config.jsonc`, stopt oude instanties, logt naar `~/.cache/big-sur/waybar.log`.
+
 ### `scripts/reload-theme.sh`
 
-Moet Hyprland en Waybar reloaden:
-
-```bash
-#!/usr/bin/env bash
-set -euo pipefail
-
-hyprctl reload
-pkill waybar || true
-waybar >/tmp/waybar-big-sur.log 2>&1 &
-scripts/apply-wallpaper.sh
-```
+Herlaadt Hyprland, start Waybar via `start-waybar.sh`, en past de wallpaper toe.
 
 ### `scripts/backup-configs.sh`
 
@@ -873,21 +868,53 @@ Of gebruik het script:
 scripts/apply-wallpaper.sh
 ```
 
-### Waybar Start Niet
+### Waybar niet zichtbaar / Waybar start niet
 
-Run Waybar handmatig:
+**Snel herstellen (in je Hyprland-sessie op Linux):**
 
 ```bash
-waybar
+# Na install.sh of sync:
+~/.config/big-sur/scripts/start-waybar.sh
+
+# Of vanuit de projectmap:
+./scripts/reload-theme.sh
+```
+
+**Controlelijst (NL / EN):**
+
+| Probleem | Oplossing |
+|----------|-----------|
+| Configs staan op Windows, niet in Linux `~/.config` | `./install.sh` in Hyprland, of `./scripts/sync-to-linux-home.sh /mnt/c/Users/.../.config` |
+| `waybar` niet geïnstalleerd | `sudo pacman -S waybar` (of distro-equivalent) |
+| Geen `~/.config/waybar/config.jsonc` | `./install.sh` of handmatig kopiëren uit `waybar/` |
+| Waybar start te vroeg na login | `hypr/hyprland.conf` gebruikt `sleep 1` + `start-waybar.sh`; na wijziging: `hyprctl reload` en script opnieuw |
+| Proces crasht direct | `waybar` in terminal (fout op stderr) of log: `~/.cache/big-sur/waybar.log` |
+| Oude Waybar (< 0.9.17) | `waybar --version` — **groups** (`group/launchers`) vereisen recente Waybar |
+| Alleen iconen ontbreken | Nerd Font: `sudo pacman -S ttf-jetbrains-mono-nerd`, daarna Waybar herstarten |
+
+**Diagnose:**
+
+```bash
+command -v waybar
+ls -la ~/.config/waybar/config.jsonc ~/.config/waybar/style.css
+pgrep -a waybar
+waybar --version
+waybar   # stop met Ctrl+C na controle; fouten verschijnen in de terminal
+```
+
+**Hyprland autostart** (in `~/.config/hypr/hyprland.conf` na installatie):
+
+```ini
+exec-once = bash -c 'sleep 1; S="$HOME/.config/big-sur/scripts/start-waybar.sh"; if [ -x "$S" ]; then exec "$S"; else exec waybar; fi'
 ```
 
 Veel voorkomende oorzaken:
 
-- fout in `config.jsonc`;
+- fout in `config.jsonc` (JSONC-syntax, onbekende module);
 - fout in `style.css`;
-- ontbrekend font;
-- ontbrekende module zoals battery op desktop-pc;
-- oude Waybar-versie.
+- ontbrekend font (bar kan wel starten, iconen ontbreken);
+- Waybar niet in PATH / niet geïnstalleerd;
+- configs niet in Linux-home (`/home/joey/.config`, niet `C:\Users\...\.config`).
 
 ### Kitty Theme Werkt Niet
 

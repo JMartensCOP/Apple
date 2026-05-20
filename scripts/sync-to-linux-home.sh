@@ -104,4 +104,5 @@ fi
 echo ""
 echo "Klaar. Configs staan in: $TARGET_CONFIG"
 echo "  hyprctl reload"
-echo "  pkill waybar; waybar &"
+echo "  ~/.config/big-sur/scripts/start-waybar.sh"
+echo "  # of: pkill waybar; waybar &"

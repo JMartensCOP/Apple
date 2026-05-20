@@ -365,5 +365,6 @@ if is_windows_shell; then
 fi
 echo "In je Hyprland-sessie:"
 echo "  hyprctl reload"
-echo "  pkill waybar; waybar &"
+echo "  $CONFIG_DIR/big-sur/scripts/start-waybar.sh"
+echo "  $PROJECT_DIR/scripts/reload-theme.sh"
 echo "  $PROJECT_DIR/scripts/apply-wallpaper.sh"
