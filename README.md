@@ -34,6 +34,39 @@ Vergrendelen gebeurt **alleen op verzoek** (**Super+L** of `hyprlock`); bij opst
 
 Na wijzigingen: `hyprctl reload` en opnieuw inloggen, of `./scripts/reload-theme.sh`.
 
+## Algemeen instellingenmenu
+
+Centraal menu voor veelgebruikte instellingen (Nederlandse labels), zonder zware **gnome-control-center** als vereiste.
+
+| Item | Waarde |
+|------|--------|
+| Script | `scripts/settings-menu.sh` → `~/.config/big-sur/scripts/settings-menu.sh` |
+| Sneltoets | **Super+,** (macOS-achtig) |
+| Waybar | `custom/settings` (󰒓) als eerste knop in `group/quick` |
+| Thema | `~/.config/rofi/big-sur.rasi` |
+| Log | `~/.cache/big-sur/settings.log` |
+
+**Menu-items (rofi):**
+
+| Keuze | Actie |
+|-------|--------|
+| Geluid | `pavucontrol` |
+| WiFi | `nm-connection-editor` |
+| Bluetooth | `open-bluetooth.sh` |
+| Beeldscherm | `wdisplays` indien geïnstalleerd; anders melding + `hyprctl monitors` in log |
+| Toetsenbord | `toggle-osk.sh` |
+| Vergrendelen | `hyprlock` |
+| Herstart sessie | `restart-session.sh` |
+
+Als **rofi** ontbreekt of faalt: valt terug op **gnome-control-center** of **systemsettings5** (KDE) wanneer geïnstalleerd — beide optioneel.
+
+**Optioneel (AUR):** [wdisplays](https://github.com/artizirk/wdisplays) voor grafische monitorconfiguratie onder *Beeldscherm*. Zonder wdisplays blijven `pavucontrol`, NetworkManager en Hyprland-tools werken.
+
+```bash
+bash ~/.config/big-sur/scripts/settings-menu.sh
+hyprctl reload   # na wijziging keybinds.conf
+```
+
 ## Doel Van Het Project
 
 Het doel is om een moderne Linux desktop te maken die visueel aansluit bij het macOS Big Sur kleurenschema: diepe nachtblauwe achtergronden, zachte rode en paarse accenten, koele cyaan/blauwe tinten, glasachtige panelen, subtiele transparantie en afgeronde vormen.
@@ -173,6 +206,7 @@ big-sur-hyprland-theme/
     ├── enable-network.sh
     ├── enable-bluetooth.sh
     ├── open-bluetooth.sh
+    ├── settings-menu.sh
     ├── enable-graphical-login.sh
     ├── fix-audio.sh
     └── sync-to-linux-home.sh
@@ -256,7 +290,7 @@ Waybar voelt als een **zwevende Big Sur menubar** (36px hoog, 8px top-margin, af
 |------|---------|
 | Links | `group/launchers` — dock-pill met terminal, browser, bestandsbeheer, VS Code |
 | Midden | `hyprland/workspaces` — 5 persistente workspaces (●/○) |
-| Rechts | `group/quick` (toetsenbord, herstart, audio, wifi, bluetooth) + `group/status` (audio, netwerk, batterij, tray) + `clock` |
+| Rechts | `group/quick` (instellingen, toetsenbord, herstart, audio, wifi, bluetooth) + `group/status` (audio, netwerk, batterij, tray) + `clock` |
 
 ### Waybar Modules
 
@@ -278,6 +312,7 @@ Rechts vóór de status-pill: `group/quick` met klikbare custom-modules:
 
 | Module | Icoon | Klik | Actie |
 |--------|-------|------|-------|
+| `custom/settings` | 󰒓 | Links | `settings-menu.sh` — algemeen instellingenmenu (rofi); ook **Super+,** |
 | `custom/keyboard` | 󰌌 | Links | `toggle-osk.sh` — schermtoetsenbord (wvkbd) aan/uit |
 | `custom/fullscreen` | 󰊓 | Links | `hyprctl dispatch fullscreen` — volledig scherm (toggle); ook **Super+F** |
 | `custom/restart` | 󰑐 | Links | `~/.config/big-sur/scripts/restart-session.sh` — Hyprland + Waybar + wallpaper herladen |
@@ -307,7 +342,7 @@ Zie `waybar/style.css`. Kernpunten:
 - `window#waybar` — floating bar: `border-radius: 14px`, glass panel `rgba(23, 23, 56, 0.58)`, box-shadow;
 - `#launchers` — dock-pill met hover-glow (cyaan) en active-state (paars);
 - `#workspaces` — gecentreerde pill, active workspace gradient `#67c7e8 → #b46cff`;
-- `#quick` — quick-action pill (zelfde stijl als launchers): toetsenbord, volledig scherm, herstart, audio, wifi, bluetooth;
+- `#quick` — quick-action pill (zelfde stijl als launchers): instellingen, toetsenbord, volledig scherm, herstart, audio, wifi, bluetooth;
 - `#status` — gegroepeerde status-pill; icon-only modules met tooltips;
 - `#clock` — aparte pill rechts, klik rechts wisselt datum/tijd.
 
@@ -687,6 +722,7 @@ bind = $mainMod SHIFT, S, exec, $spotify
 bind = $mainMod SHIFT, U, exec, $cursor
 bind = $mainMod SHIFT, H, exec, $etcher
 bind = $mainMod, Space, exec, $menu
+bind = $mainMod, comma, exec, bash "$HOME/.config/big-sur/scripts/settings-menu.sh"
 bind = $mainMod, L, exec, hyprlock
 bind = $mainMod, V, togglefloating
 bind = $mainMod, F, fullscreen
@@ -991,6 +1027,14 @@ Opent **blueman-manager** als dat geïnstalleerd is; anders **bluetoothctl** in 
 
 ```bash
 bash ~/.config/big-sur/scripts/open-bluetooth.sh
+```
+
+### `scripts/settings-menu.sh`
+
+Algemeen **instellingenmenu** (Nederlandse rofi-lijst, Big Sur-thema). Waybar 󰒓 en **Super+,**. Log: `~/.cache/big-sur/settings.log`. Geen **gnome-control-center** vereist; optionele fallback naar GNOME/KDE systeeminstellingen als rofi ontbreekt. *Beeldscherm:* voorkeur **wdisplays** (AUR, optioneel).
+
+```bash
+bash ~/.config/big-sur/scripts/settings-menu.sh
 ```
 
 ### `scripts/start-hyprland.sh`

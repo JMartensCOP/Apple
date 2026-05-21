@@ -90,6 +90,7 @@
   "group/quick": {
     "orientation": "horizontal",
     "modules": [
+      "custom/settings",
       "custom/keyboard",
       "custom/fullscreen",
       "custom/restart",
@@ -97,6 +98,13 @@
       "custom/wifi",
       "custom/bluetooth"
     ]
+  },
+
+  "custom/settings": {
+    "format": "󰒓",
+    "tooltip": true,
+    "tooltip-format": "Instellingen — Super+,",
+    "on-click": "bash \"$HOME/.config/big-sur/scripts/settings-menu.sh\""
   },
 
   "custom/keyboard": {
