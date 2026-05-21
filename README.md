@@ -53,14 +53,14 @@ Centraal menu voor veelgebruikte instellingen (Nederlandse labels), zonder zware
 | Geluid | `pavucontrol` |
 | WiFi | `nm-connection-editor` |
 | Bluetooth | `open-bluetooth.sh` |
-| Beeldscherm | `wdisplays` indien geïnstalleerd; anders melding + `hyprctl monitors` in log |
+| Beeldscherm | `open-display-settings.sh` → `wdisplays`, `nwg-displays`, `hyprsettings`; anders zwevende terminal met `hyprctl monitors` |
 | Toetsenbord | `toggle-osk.sh` |
 | Vergrendelen | `hyprlock` |
 | Herstart sessie | `restart-session.sh` |
 
-Als **rofi** ontbreekt of faalt: valt terug op **gnome-control-center** of **systemsettings5** (KDE) wanneer geïnstalleerd — beide optioneel.
+Als **rofi** ontbreekt: valt terug op **gnome-control-center** of **systemsettings5** (KDE) wanneer geïnstalleerd — beide optioneel. Annuleren (Esc) opent geen fallback meer.
 
-**Optioneel (AUR):** [wdisplays](https://github.com/artizirk/wdisplays) voor grafische monitorconfiguratie onder *Beeldscherm*. Zonder wdisplays blijven `pavucontrol`, NetworkManager en Hyprland-tools werken.
+**Beeldscherm:** `install.sh` installeert **wdisplays** uit Arch **extra** ([pakket](https://archlinux.org/packages/extra/x86_64/wdisplays/)). Zonder GUI-tools opent `open-display-settings.sh` een zwevende terminal met `hyprctl monitors` en een melding. Alternatieven: `nwg-displays` (extra), `hyprsettings` (AUR).
 
 ```bash
 bash ~/.config/big-sur/scripts/settings-menu.sh
@@ -206,6 +206,7 @@ big-sur-hyprland-theme/
     ├── enable-network.sh
     ├── enable-bluetooth.sh
     ├── open-bluetooth.sh
+    ├── open-display-settings.sh
     ├── settings-menu.sh
     ├── enable-graphical-login.sh
     ├── fix-audio.sh
@@ -535,7 +536,7 @@ yay -S balena-etcher
 Voor Arch (officiële repos):
 
 ```bash
-sudo pacman -S hyprland waybar kitty hyprpaper rofi-wayland dunst wl-clipboard grim slurp brightnessctl playerctl pavucontrol pipewire pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-firmware sof-firmware networkmanager network-manager-applet iw wireless-regdb linux-firmware bluez bluez-utils blueman upower dolphin firefox code ttf-jetbrains-mono-nerd inter-font onboard spotify-launcher
+sudo pacman -S hyprland waybar kitty hyprpaper rofi-wayland dunst wl-clipboard grim slurp brightnessctl playerctl pavucontrol pipewire pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-firmware sof-firmware networkmanager network-manager-applet iw wireless-regdb linux-firmware bluez bluez-utils blueman upower dolphin firefox code ttf-jetbrains-mono-nerd inter-font onboard spotify-launcher wdisplays
 ```
 
 **Audio (Arch):** gebruik **PipeWire** met `pipewire-pulse` (PulseAudio-compatibiliteit voor Waybar `pulseaudio`-module en `pavucontrol`). Het legacy `pulseaudio`-pakket is niet nodig. Voor Intel-laptops (bijv. HP EliteBook) installeert `install.sh` ook `alsa-firmware`, `sof-firmware` en `alsa-utils`. `install.sh` schakelt de officiële user-units in via `scripts/enable-audio.sh` en probeert laptop-speakers als standaard uitgang via `scripts/fix-audio.sh --auto`:
@@ -1029,12 +1030,21 @@ Opent **blueman-manager** als dat geïnstalleerd is; anders **bluetoothctl** in 
 bash ~/.config/big-sur/scripts/open-bluetooth.sh
 ```
 
+### `scripts/open-display-settings.sh`
+
+Opent **beeldscherminstellingen** voor Hyprland. Probeert in volgorde: **wdisplays** (Arch extra), **nwg-displays**, **hyprsettings** / **hyprgui**. Als geen GUI beschikbaar is: zwevende terminal (kitty/foot/alacritty) met `hyprctl monitors` en een desktopmelding.
+
+```bash
+bash ~/.config/big-sur/scripts/open-display-settings.sh
+```
+
 ### `scripts/settings-menu.sh`
 
-Algemeen **instellingenmenu** (Nederlandse rofi-lijst, Big Sur-thema). Waybar 󰒓 en **Super+,**. Log: `~/.cache/big-sur/settings.log`. Geen **gnome-control-center** vereist; optionele fallback naar GNOME/KDE systeeminstellingen als rofi ontbreekt. *Beeldscherm:* voorkeur **wdisplays** (AUR, optioneel).
+Algemeen **instellingenmenu** (Nederlandse rofi-lijst, Big Sur-thema). Waybar 󰒓 en **Super+,**. Log: `~/.cache/big-sur/settings.log`. Geen **gnome-control-center** vereist; optionele fallback naar GNOME/KDE systeeminstellingen als rofi ontbreekt. *Beeldscherm:* via `open-display-settings.sh` (wdisplays → nwg-displays → hyprsettings → terminal).
 
 ```bash
 bash ~/.config/big-sur/scripts/settings-menu.sh
+bash ~/.config/big-sur/scripts/open-display-settings.sh
 ```
 
 ### `scripts/start-hyprland.sh`

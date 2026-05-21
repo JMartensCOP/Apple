@@ -647,6 +647,7 @@ ARCH_PACKAGES=(
   inter-font
   onboard
   spotify-launcher
+  wdisplays
 )
 
 resolve_config_dir
@@ -769,7 +770,7 @@ echo "  $CONFIG_DIR/big-sur/scripts/enable-bluetooth.sh"
 echo ""
 echo "Instellingenmenu (rofi; geen gnome-control-center vereist):"
 echo "  Super+, of Waybar 󰒓 → $CONFIG_DIR/big-sur/scripts/settings-menu.sh"
-echo "  Optioneel beeldscherm: wdisplays (AUR) — zie README"
+echo "  Beeldscherm: wdisplays (pacman extra) — $CONFIG_DIR/big-sur/scripts/open-display-settings.sh"
 echo ""
 echo "Vouw-laptop (schermtoetsenbord):"
 echo "  bash \"$CONFIG_DIR/big-sur/scripts/diagnose-convertible.sh\""

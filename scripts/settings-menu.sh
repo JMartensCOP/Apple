@@ -17,51 +17,52 @@ notify() {
   log "$msg"
 }
 
-open_display() {
-  if command -v wdisplays >/dev/null 2>&1; then
-    log "open wdisplays"
-    exec wdisplays "$@"
-  fi
-
-  local hint="Geen wdisplays. Optioneel: yay -S wdisplays. Monitoren: hyprctl monitors"
-  notify "$hint"
-  log "$hint"
-  if command -v hyprctl >/dev/null 2>&1; then
-    hyprctl monitors >>"$LOG_FILE" 2>&1 || true
-  fi
+resolve_cmd() {
+  local candidate
+  for candidate in "$@"; do
+    if command -v "$candidate" >/dev/null 2>&1; then
+      command -v "$candidate"
+      return 0
+    fi
+  done
+  return 1
 }
 
 run_choice() {
   local choice="$1"
+  shift || true
   log "keuze: $choice"
 
   case "$choice" in
     Geluid)
-      if command -v pavucontrol >/dev/null 2>&1; then
-        exec pavucontrol "$@"
+      if cmd=$(resolve_cmd pavucontrol); then
+        log "open $cmd"
+        exec "$cmd" "$@"
       fi
-      notify "pavucontrol niet gevonden (pacman -S pavucontrol)"
+      notify "pavucontrol niet gevonden (sudo pacman -S pavucontrol)"
       exit 1
       ;;
     WiFi)
-      if command -v nm-connection-editor >/dev/null 2>&1; then
-        exec nm-connection-editor "$@"
+      if cmd=$(resolve_cmd nm-connection-editor); then
+        log "open $cmd"
+        exec "$cmd" "$@"
       fi
-      notify "nm-connection-editor niet gevonden"
+      notify "nm-connection-editor niet gevonden (sudo pacman -S network-manager-applet)"
       exit 1
       ;;
     Bluetooth)
       exec bash "$SCRIPT_DIR/open-bluetooth.sh" "$@"
       ;;
     Beeldscherm)
-      open_display
+      exec bash "$SCRIPT_DIR/open-display-settings.sh" "$@"
       ;;
     Toetsenbord)
       exec bash "$SCRIPT_DIR/toggle-osk.sh" "$@"
       ;;
     Vergrendelen)
-      if command -v hyprlock >/dev/null 2>&1; then
-        exec hyprlock "$@"
+      if cmd=$(resolve_cmd hyprlock); then
+        log "open $cmd"
+        exec "$cmd" "$@"
       fi
       notify "hyprlock niet gevonden"
       exit 1
@@ -84,7 +85,9 @@ show_rofi_menu() {
     rofi_args+=(-theme "$ROFI_THEME")
   fi
 
-  local choice
+  local choice=""
+  local rofi_exit=0
+  set +e
   choice="$(
     printf '%s\n' \
       Geluid \
@@ -94,10 +97,12 @@ show_rofi_menu() {
       Toetsenbord \
       Vergrendelen \
       "Herstart sessie" | rofi "${rofi_args[@]}"
-  )" || return 1
+  )"
+  rofi_exit=$?
+  set -e
 
-  if [ -z "$choice" ]; then
-    log "menu geannuleerd"
+  if [ "$rofi_exit" -ne 0 ] || [ -z "$choice" ]; then
+    log "menu geannuleerd of leeg (rofi exit=$rofi_exit)"
     return 0
   fi
 
@@ -105,16 +110,16 @@ show_rofi_menu() {
 }
 
 open_fallback_settings() {
-  if command -v gnome-control-center >/dev/null 2>&1; then
-    log "fallback: gnome-control-center"
+  if cmd=$(resolve_cmd gnome-control-center); then
+    log "fallback: $cmd"
     notify "Systeeminstellingen (GNOME)"
-    exec gnome-control-center "$@"
+    exec "$cmd" "$@"
   fi
 
-  if command -v systemsettings5 >/dev/null 2>&1; then
-    log "fallback: systemsettings5"
+  if cmd=$(resolve_cmd systemsettings5); then
+    log "fallback: $cmd"
     notify "Systeeminstellingen (KDE)"
-    exec systemsettings5 "$@"
+    exec "$cmd" "$@"
   fi
 
   notify "Geen instellingen-UI. Installeer rofi, gnome-control-center of systemsettings5."
@@ -124,11 +129,12 @@ open_fallback_settings() {
 main() {
   log "settings-menu gestart (pid $$)"
 
-  if show_rofi_menu; then
+  if command -v rofi >/dev/null 2>&1; then
+    show_rofi_menu
     exit 0
   fi
 
-  log "rofi niet beschikbaar of mislukt — fallback"
+  log "rofi niet beschikbaar — fallback"
   open_fallback_settings
 }
 
