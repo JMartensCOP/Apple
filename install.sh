@@ -157,8 +157,13 @@ install_dependencies() {
 
   # Spotify: spotify-launcher zit in ARCH_PACKAGES (Arch extra). Geen volledige -Syu
   # bij elke install — --needed installeert alleen ontbrekende pakketten.
+  local pacman_extra=()
+  if etcher_pacman_package="$(etcher_pacman_package_name 2>/dev/null || true)" && [ -n "$etcher_pacman_package" ]; then
+    pacman_extra+=("$etcher_pacman_package")
+    echo "Balena Etcher: $etcher_pacman_package gevonden in officiële repos — via pacman."
+  fi
   echo "Installeer benodigde pakketten via pacman..."
-  sudo pacman -S --needed "${ARCH_PACKAGES[@]}"
+  sudo pacman -S --needed "${ARCH_PACKAGES[@]}" "${pacman_extra[@]}"
 }
 
 install_osk_optional() {
@@ -331,6 +336,139 @@ report_cursor_status() {
   echo "AppImage: download van https://cursor.com → ~/Applications/Cursor-*.AppImage (chmod +x)"
   echo "Waybar 󰏘 en Super+Shift+U: bash \"$PROJECT_DIR/scripts/launch-cursor.sh\""
   echo "Log bij klik: ~/.cache/big-sur/cursor.log"
+  echo "Optioneel auto-install: ./install.sh -y   (met yay/paru)"
+}
+
+etcher_pacman_package_name() {
+  if ! command -v pacman >/dev/null 2>&1; then
+    return 1
+  fi
+  local pkg
+  for pkg in etcher-bin balena-etcher-bin balena-etcher etcher; do
+    if pacman -Si "$pkg" >/dev/null 2>&1; then
+      echo "$pkg"
+      return 0
+    fi
+  done
+  return 1
+}
+
+etcher_available() {
+  command -v balena-etcher >/dev/null 2>&1 && return 0
+  command -v etcher >/dev/null 2>&1 && return 0
+  [ -x /usr/bin/balena-etcher ] && return 0
+  [ -x /usr/bin/etcher ] && return 0
+  [ -x /opt/balena-etcher/etcher ] && return 0
+  local pattern path
+  shopt -s nullglob
+  for pattern in \
+    "$HOME/Applications/balena-etcher"*.AppImage \
+    "$HOME/Applications/Balena-Etcher"*.AppImage \
+    "$HOME/Applications/etcher"*.AppImage \
+    "$HOME/Applications/Etcher"*.AppImage \
+    "$HOME/Downloads/balena-etcher"*.AppImage \
+    "$HOME/Downloads/Balena-Etcher"*.AppImage \
+    "$HOME/Downloads/etcher"*.AppImage \
+    "$HOME/Downloads/Etcher"*.AppImage; do
+    for path in $pattern; do
+      [ -f "$path" ] && return 0
+    done
+  done
+  shopt -u nullglob
+  if command -v flatpak >/dev/null 2>&1; then
+    flatpak info io.balena.etcher >/dev/null 2>&1 && return 0
+    flatpak list --app 2>/dev/null | grep -qi etcher && return 0
+  fi
+  if command -v pacman >/dev/null 2>&1; then
+    pacman -Q etcher-bin >/dev/null 2>&1 && return 0
+    pacman -Q balena-etcher >/dev/null 2>&1 && return 0
+    pacman -Q balena-etcher-bin >/dev/null 2>&1 && return 0
+  fi
+  return 1
+}
+
+install_etcher_optional() {
+  if is_windows_shell || ! is_linux; then
+    return 0
+  fi
+
+  if etcher_available; then
+    local hint=""
+    if command -v balena-etcher >/dev/null 2>&1; then
+      hint="$(command -v balena-etcher)"
+    elif command -v etcher >/dev/null 2>&1; then
+      hint="$(command -v etcher)"
+    elif [ -x /opt/balena-etcher/etcher ]; then
+      hint="/opt/balena-etcher/etcher"
+    else
+      hint="AppImage of Flatpak (zie launch-etcher.sh)"
+    fi
+    echo "Balena Etcher: client gevonden ($hint)."
+    return 0
+  fi
+
+  if etcher_pacman_package="$(etcher_pacman_package_name 2>/dev/null || true)" && [ -n "$etcher_pacman_package" ]; then
+    echo "Balena Etcher: $etcher_pacman_package hoort via pacman geïnstalleerd te zijn."
+    report_etcher_status
+    return 0
+  fi
+
+  local yay_flags=(--needed)
+  if [ "$FORCE" = true ]; then
+    yay_flags+=(--noconfirm)
+  fi
+
+  if command -v yay >/dev/null 2>&1; then
+    echo ""
+    echo "=== Balena Etcher (AUR via yay) ==="
+    echo "Etcher staat niet in officiële Arch-repos — probeer etcher-bin..."
+    if yay -S "${yay_flags[@]}" etcher-bin; then
+      if etcher_available; then
+        echo "Balena Etcher: etcher-bin geïnstalleerd."
+        return 0
+      fi
+    else
+      echo "etcher-bin mislukt — probeer balena-etcher..."
+      if yay -S "${yay_flags[@]}" balena-etcher; then
+        if etcher_available; then
+          echo "Balena Etcher: balena-etcher geïnstalleerd."
+          return 0
+        fi
+      fi
+    fi
+  elif command -v paru >/dev/null 2>&1; then
+    echo ""
+    echo "=== Balena Etcher (AUR via paru) ==="
+    local paru_flags=(--needed)
+    [ "$FORCE" = true ] && paru_flags+=(--noconfirm)
+    if paru -S "${paru_flags[@]}" etcher-bin || paru -S "${paru_flags[@]}" balena-etcher; then
+      if etcher_available; then
+        echo "Balena Etcher: geïnstalleerd via paru."
+        return 0
+      fi
+    fi
+  fi
+
+  report_etcher_status
+}
+
+report_etcher_status() {
+  if is_windows_shell || ! is_linux; then
+    return 0
+  fi
+
+  if etcher_available; then
+    return 0
+  fi
+
+  echo ""
+  echo "=== Balena Etcher ==="
+  echo "Etcher staat niet in Arch extra — alleen AUR (etcher-bin / balena-etcher) of AppImage."
+  echo "Met yay: yay -S etcher-bin   (of: yay -S balena-etcher)"
+  echo "Met paru: paru -S etcher-bin"
+  echo "AppImage: download van https://etcher.balena.io → ~/Applications/balena-etcher-*.AppImage (chmod +x)"
+  echo "Waybar 󰋊 en Super+Shift+H: bash \"$PROJECT_DIR/scripts/launch-etcher.sh\""
+  echo "Log bij klik: ~/.cache/big-sur/etcher.log"
   echo "Optioneel auto-install: ./install.sh -y   (met yay/paru)"
 }
 
@@ -532,6 +670,7 @@ confirm_target_if_needed
 install_dependencies
 install_osk_optional
 install_cursor_optional
+install_etcher_optional
 report_spotify_status
 enable_audio_services
 enable_network_services

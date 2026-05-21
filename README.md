@@ -166,6 +166,7 @@ big-sur-hyprland-theme/
     ├── launch-code.sh
     ├── launch-cursor.sh
     ├── launch-spotify.sh
+    ├── launch-etcher.sh
     ├── test-spotify.sh
     ├── backup-configs.sh
     ├── enable-audio.sh
@@ -287,7 +288,7 @@ Rechts vóór de status-pill: `group/quick` met klikbare custom-modules:
 
 `install.sh` kopieert alle scripts naar `~/.config/big-sur/scripts/`. Bij handmatige installatie: zelfde map aanmaken en `scripts/*.sh` daarheen kopiëren (`chmod +x`).
 
-Links in de menubar: `group/launchers` met zes klikbare custom-modules (Nerd Font-iconen) die dezelfde apps starten als de Hyprland-keybinds:
+Links in de menubar: `group/launchers` met zeven klikbare custom-modules (Nerd Font-iconen) die dezelfde apps starten als de Hyprland-keybinds:
 
 | Module | Icoon | `on-click` | Keybind |
 |--------|-------|------------|---------|
@@ -297,6 +298,7 @@ Links in de menubar: `group/launchers` met zes klikbare custom-modules (Nerd Fon
 | `custom/code` | 󰨞 | `launch-code.sh` | Super+Shift+C |
 | `custom/cursor` | 󰏘 | `launch-cursor.sh` | Super+Shift+U |
 | `custom/spotify` | 󰓇 | `launch-spotify.sh` | Super+Shift+S |
+| `custom/etcher` | 󰋊 | `launch-etcher.sh` | Super+Shift+H |
 
 ### Waybar CSS Richting
 
@@ -483,6 +485,18 @@ yay -S cursor-appimage
 
 `launch-cursor.sh` zoekt: `cursor`, `Cursor`, `/usr/bin/cursor`, `~/.local/bin/cursor`, AppImages in `~/Applications` en `~/Downloads`, en Flatpak `com.todesktop.*`.
 
+**Balena Etcher:** staat **niet** in Arch **extra** — alleen [AUR](https://aur.archlinux.org/packages/etcher-bin) (`etcher-bin`, `balena-etcher`) of een **AppImage** van [etcher.balena.io](https://etcher.balena.io). `install.sh` probeert optioneel `etcher-bin` via `yay`/`paru` (met `./install.sh -y` zonder bevestigingsvragen voor AUR). Als het pakket ooit in officiële repos komt, installeert `install.sh` het via pacman. Waybar 󰋊 en **Super+Shift+H** starten via `scripts/launch-etcher.sh`.
+
+```bash
+yay -S etcher-bin              # AUR (aanbevolen op Arch)
+# of:
+yay -S balena-etcher
+# AppImage:
+# Download van https://etcher.balena.io → ~/Applications/balena-etcher-*.AppImage && chmod +x
+```
+
+`launch-etcher.sh` zoekt: `balena-etcher`, `etcher`, `/opt/balena-etcher/etcher`, AppImages in `~/Applications` en `~/Downloads`, of Flatpak `io.balena.etcher`.
+
 Voor Arch (officiële repos):
 
 ```bash
@@ -501,7 +515,7 @@ Op Windows/Git Bash worden pakketten en systemd overgeslagen; voer `./install.sh
 
 **Bluetooth (Arch):** `bluez` levert `bluetoothd`; `bluez-utils` levert `bluetoothctl`; `blueman` is de GUI. `install.sh` schakelt de stack in via `scripts/enable-bluetooth.sh` (`systemctl enable --now bluetooth`, `rfkill unblock bluetooth`, adapter aan).
 
-Firefox staat in de officiële Arch-repositories (`firefox`). Visual Studio Code heet op Arch **`code`** (open-source build in `extra`; volledige Visual Studio IDE is alleen Windows/macOS). `install.sh` installeert beide samen met de overige pakketten. Waybar en **Super+Shift+C** starten VS Code via `scripts/launch-code.sh` (fallback: `code-oss`, `codium`). **Cursor IDE** via AUR/AppImage — zie hierboven; Waybar 󰏘 en **Super+Shift+U** via `scripts/launch-cursor.sh`. Spotify via **`spotify-launcher`** in `extra` — zie hierboven; Waybar 󰓇 en **Super+Shift+S** via `scripts/launch-spotify.sh`. Voor een andere browser pas je `$browser` in `hypr/keybinds.conf` en `custom/browser` in `waybar/config.jsonc` aan. Voor een andere editor pas je `$editor`, `launch-code.sh` en `custom/code` aan; voor Cursor: `$cursor`, `launch-cursor.sh` en `custom/cursor`.
+Firefox staat in de officiële Arch-repositories (`firefox`). Visual Studio Code heet op Arch **`code`** (open-source build in `extra`; volledige Visual Studio IDE is alleen Windows/macOS). `install.sh` installeert beide samen met de overige pakketten. Waybar en **Super+Shift+C** starten VS Code via `scripts/launch-code.sh` (fallback: `code-oss`, `codium`). **Cursor IDE** via AUR/AppImage — zie hierboven; Waybar 󰏘 en **Super+Shift+U** via `scripts/launch-cursor.sh`. Spotify via **`spotify-launcher`** in `extra` — zie hierboven; Waybar 󰓇 en **Super+Shift+S** via `scripts/launch-spotify.sh`. **Balena Etcher** via AUR/AppImage — zie hierboven; Waybar 󰋊 en **Super+Shift+H** via `scripts/launch-etcher.sh`. Voor een andere browser pas je `$browser` in `hypr/keybinds.conf` en `custom/browser` in `waybar/config.jsonc` aan. Voor een andere editor pas je `$editor`, `launch-code.sh` en `custom/code` aan; voor Cursor: `$cursor`, `launch-cursor.sh` en `custom/cursor`; voor Etcher: `$etcher`, `launch-etcher.sh` en `custom/etcher`.
 
 Als pakketten niet bestaan op de distro van de gebruiker, moet de README uitleggen dat de gebruiker distro-specifieke pakketnamen moet gebruiken.
 
@@ -660,6 +674,7 @@ $browser = firefox
 $editor = bash "$HOME/.config/big-sur/scripts/launch-code.sh"
 $spotify = bash -lc '/usr/bin/bash "$HOME/.config/big-sur/scripts/launch-spotify.sh"'
 $cursor = bash -lc '/usr/bin/bash "$HOME/.config/big-sur/scripts/launch-cursor.sh"'
+$etcher = bash -lc '/usr/bin/bash "$HOME/.config/big-sur/scripts/launch-etcher.sh"'
 $menu = rofi -show drun -theme ~/.config/rofi/big-sur.rasi
 
 bind = $mainMod, T, exec, $terminal
@@ -670,6 +685,7 @@ bind = $mainMod, B, exec, $browser
 bind = $mainMod SHIFT, C, exec, $editor
 bind = $mainMod SHIFT, S, exec, $spotify
 bind = $mainMod SHIFT, U, exec, $cursor
+bind = $mainMod SHIFT, H, exec, $etcher
 bind = $mainMod, Space, exec, $menu
 bind = $mainMod, L, exec, hyprlock
 bind = $mainMod, V, togglefloating
@@ -926,6 +942,19 @@ tail -f ~/.cache/big-sur/spotify.log
 ```
 
 Als geen client gevonden wordt: desktopmelding en pacman/Flatpak-hint (`sudo pacman -S --needed spotify-launcher`).
+
+### `scripts/launch-etcher.sh`
+
+Start **Balena Etcher** met voorkeur `balena-etcher`/`etcher` in PATH, `/opt/balena-etcher/etcher`, AppImages in `~/Applications` en `~/Downloads`, of Flatpak `io.balena.etcher`. Waybar-knop `custom/etcher` (󰋊) en sneltoets **Super+Shift+H** gebruiken dit script.
+
+Elke klik logt naar `~/.cache/big-sur/etcher.log` en stuurt een **notify-send** (Bezig…, gestart, of fout met install-hint).
+
+```bash
+bash ~/.config/big-sur/scripts/launch-etcher.sh
+tail -f ~/.cache/big-sur/etcher.log
+```
+
+Als geen client gevonden wordt: desktopmelding en AUR/AppImage-hint (`yay -S etcher-bin` of download van [etcher.balena.io](https://etcher.balena.io)).
 
 ### `scripts/test-spotify.sh`
 
@@ -1293,6 +1322,31 @@ chmod +x ~/Applications/Cursor-*.AppImage
 
 **Waybar:** dock-icoon 󰏘 → `launch-cursor.sh`. **Keybind:** Super+Shift+U.
 
+### Balena Etcher start niet (Waybar 󰋊 / Super+Shift+H)
+
+**Symptoom:** Klik op het Etcher-icoon in de Waybar-dock of druk **Super+Shift+H** — er gebeurt niets, of je ziet een melding “Geen Balena Etcher”.
+
+**Oorzaak:** Etcher staat niet in Arch **extra**; `etcher-bin` (AUR) of AppImage ontbreekt, of `launch-etcher.sh` staat niet in `~/.config/big-sur/scripts/`.
+
+**Client installeren** (kies één):
+
+```bash
+yay -S etcher-bin                          # AUR (aanbevolen)
+./install.sh -y                            # probeert etcher-bin via yay/paru
+# AppImage van https://etcher.balena.io:
+chmod +x ~/Applications/balena-etcher-*.AppImage
+```
+
+| Probleem | Oplossing |
+|----------|-----------|
+| `balena-etcher: command not found` | `yay -S etcher-bin` of AppImage in `~/Applications` |
+| Icoon ontbreekt in Waybar | `custom/etcher` in `group/launchers`; herinstalleer via `./install.sh` |
+| Sneltoets werkt niet | `hyprctl reload` na wijziging in `keybinds.conf` |
+| Geen notify bij klik | Update Waybar `on-click` naar `bash -lc` + `launch-etcher.sh` |
+| Start mislukt na install | `tail ~/.cache/big-sur/etcher.log` — AppImage soms `--no-sandbox` nodig (script doet dit) |
+
+**Waybar:** dock-icoon 󰋊 → `launch-etcher.sh`. **Keybind:** Super+Shift+H.
+
 ### Configs Verschijnen Niet In Je Hyprland-sessie
 
 Als je `install.sh` vanaf **Windows (Git Bash)** hebt gedraaid, staan de bestanden in je **Windows**-profiel, bijvoorbeeld:
@@ -1397,6 +1451,7 @@ scripts/apply-wallpaper.sh
 | VS Code-icoon / Super+Shift+C doet niets | `sudo pacman -S code`; test `bash ~/.config/big-sur/scripts/launch-code.sh` — zie [Visual Studio Code start niet](#visual-studio-code-start-niet-waybar--supershiftc) |
 | Spotify-icoon / Super+Shift+S doet niets | `sudo pacman -S --needed spotify-launcher` of `./install.sh`; test `bash ~/.config/big-sur/scripts/test-spotify.sh` — zie [Spotify start niet](#spotify-start-niet-waybar--supershifts) |
 | Cursor-icoon / Super+Shift+U doet niets | `yay -S cursor-bin` of AppImage van [cursor.com](https://cursor.com); test `bash ~/.config/big-sur/scripts/launch-cursor.sh` — zie [Cursor IDE start niet](#cursor-ide-start-niet-waybar--supershiftu) |
+| Etcher-icoon / Super+Shift+H doet niets | `yay -S etcher-bin` of AppImage van [etcher.balena.io](https://etcher.balena.io); test `bash ~/.config/big-sur/scripts/launch-etcher.sh` — zie [Balena Etcher start niet](#balena-etcher-start-niet-waybar--supershifth) |
 
 **Diagnose:**
 
@@ -1509,6 +1564,8 @@ Dit thema werkt op een **HP EliteBook x360** (2-in-1 business-laptop) zonder spe
 3d. **Spotify start niet (󰓇 / Super+Shift+S)** — `./install.sh` op Linux (installeert `spotify-launcher`) of test `bash ~/.config/big-sur/scripts/test-spotify.sh`. Zie [Spotify start niet](#spotify-start-niet-waybar--supershifts).
 
 3e. **Cursor start niet (󰏘 / Super+Shift+U)** — `yay -S cursor-bin`, `./install.sh -y`, of AppImage van [cursor.com](https://cursor.com). Test `bash ~/.config/big-sur/scripts/launch-cursor.sh`. Zie [Cursor IDE start niet](#cursor-ide-start-niet-waybar--supershiftu).
+
+3f. **Etcher start niet (󰋊 / Super+Shift+H)** — `yay -S etcher-bin`, `./install.sh -y`, of AppImage van [etcher.balena.io](https://etcher.balena.io). Test `bash ~/.config/big-sur/scripts/launch-etcher.sh`. Zie [Balena Etcher start niet](#balena-etcher-start-niet-waybar--supershifth).
 
 4. **Boot vraagt terminal-login vóór desktop** — `./install.sh` op Linux (autostart via `setup-bash-profile.sh`). SDDM uit? `sudo systemctl disable --now sddm.service`. Zie [Geen terminal bij opstarten](#geen-terminal-bij-opstarten).
 

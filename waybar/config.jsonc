@@ -15,7 +15,7 @@
 
   "group/launchers": {
     "orientation": "horizontal",
-    "modules": ["custom/terminal", "custom/browser", "custom/files", "custom/code", "custom/cursor", "custom/spotify"]
+    "modules": ["custom/terminal", "custom/browser", "custom/files", "custom/code", "custom/cursor", "custom/spotify", "custom/etcher"]
   },
 
   "custom/terminal": {
@@ -58,6 +58,13 @@
     "tooltip": true,
     "tooltip-format": "Spotify — Super+Shift+S",
     "on-click": "bash -lc '/usr/bin/bash \"$HOME/.config/big-sur/scripts/launch-spotify.sh\"'"
+  },
+
+  "custom/etcher": {
+    "format": "󰋊",
+    "tooltip": true,
+    "tooltip-format": "Balena Etcher — Super+Shift+H",
+    "on-click": "bash -lc '/usr/bin/bash \"$HOME/.config/big-sur/scripts/launch-etcher.sh\"'"
   },
 
   "hyprland/workspaces": {
