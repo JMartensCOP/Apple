@@ -55,6 +55,8 @@ Centraal menu voor veelgebruikte instellingen (Nederlandse labels), zonder zware
 | Bluetooth | `open-bluetooth.sh` |
 | Beeldscherm | `open-display-settings.sh` → `wdisplays`, `nwg-displays`, `hyprsettings`; anders zwevende terminal met `hyprctl monitors` |
 | Toetsenbord | `toggle-osk.sh` |
+| Apps | `launch-apps-menu.sh` — rofi submenu met geïnstalleerde apps (categorieën) |
+| App Store | `launch-app-store.sh` → **gnome-software** (Flatpak + optioneel PackageKit) |
 | Vergrendelen | `hyprlock` |
 | Herstart sessie | `restart-session.sh` |
 
@@ -64,6 +66,7 @@ Als **rofi** ontbreekt: valt terug op **gnome-control-center** of **systemsettin
 
 ```bash
 bash ~/.config/big-sur/scripts/settings-menu.sh
+bash ~/.config/big-sur/scripts/launch-apps-menu.sh   # direct Apps-menu (Super+, → Apps)
 hyprctl reload   # na wijziging keybinds.conf
 ```
 
@@ -200,6 +203,11 @@ big-sur-hyprland-theme/
     ├── launch-cursor.sh
     ├── launch-spotify.sh
     ├── launch-etcher.sh
+    ├── launch-apps-menu.sh
+    ├── launch-app-store.sh
+    ├── launch-steam.sh
+    ├── launch-lutris.sh
+    ├── launch-prism.sh
     ├── test-spotify.sh
     ├── backup-configs.sh
     ├── enable-audio.sh
@@ -491,6 +499,27 @@ code
 ttf-jetbrains-mono-nerd
 inter-font
 spotify-launcher
+wdisplays
+onboard
+btop
+git
+base-devel
+flatpak
+vlc
+libreoffice-fresh
+keepassxc
+thunderbird
+gparted
+gnome-disk-utility
+wireshark-qt
+nmap
+remmina
+steam
+mangohud
+lutris
+prism-launcher
+docker
+docker-compose
 ```
 
 **Schermtoetsenbord (wvkbd):** staat **niet** in de officiële Arch-repositories — alleen [AUR](https://aur.archlinux.org/packages/wvkbd). Fallback **onboard** via `pacman` (in `install.sh`). Geen systemd-service; start via Waybar 󰌌 of `toggle-osk.sh`.
@@ -533,10 +562,16 @@ yay -S balena-etcher
 
 `launch-etcher.sh` zoekt: `balena-etcher`, `etcher`, `/opt/balena-etcher/etcher`, AppImages in `~/Applications` en `~/Downloads`, of Flatpak `io.balena.etcher`.
 
+**Gebruikersapps (Arch extra/community):** `install.sh` installeert via `ARCH_PACKAGES` onder meer: **btop**, **git**, **base-devel**, **flatpak**, **gnome-software** (App Store), **vlc**, **libreoffice-fresh**, **keepassxc**, **thunderbird**, **gparted**, **gnome-disk-utility** (binary `gnome-disks`), **wireshark-qt**, **nmap**, **remmina**, **steam**, **mangohud**, **lutris**, **prism-launcher**, **docker**, **docker-compose**. **mangohud** is een game-overlay (geen menu-launcher). **git** wordt wel geïnstalleerd maar heeft geen Apps-menu-item. **Docker:** CLI via Apps-menu; activeer de daemon met `sudo systemctl enable --now docker` en voeg je user toe aan groep `docker`. Terminal-tools (**btop**, **nmap**, **Flatpak-lijst**, **Docker-status**) openen in **kitty**. Gaming: **Steam**, **Lutris** en **Prism Launcher** via `launch-steam.sh`, `launch-lutris.sh`, `launch-prism.sh`.
+
+**App Store:** **gnome-software** uit Arch **extra** ([pakket](https://archlinux.org/packages/extra/x86_64/gnome-software/)). Start via **Super+, → App Store**, **Super+, → Apps → Winkel → App Store**, of `launch-app-store.sh`. Met **flatpak** geïnstalleerd toont GNOME Software doorgaans Flatpak-apps; voor repo-pakketten via PackageKit is optioneel `gnome-software-packagekit-plugin` (niet standaard in dit thema — pacman blijft de aanbevolen weg voor systeempakketten).
+
+**Apps-menu:** **Super+,** → **Apps**, of direct `launch-apps-menu.sh`. Categorieën: *Dagelijks*, *Media & kantoor*, *Winkel*, *Systeem*, *Netwerk*, *Gaming*. Waybar-dock blijft compact (terminal, browser, bestanden, VS Code, Cursor, Spotify, Etcher); overige apps staan in het Apps-submenu.
+
 Voor Arch (officiële repos):
 
 ```bash
-sudo pacman -S hyprland waybar kitty hyprpaper rofi-wayland dunst wl-clipboard grim slurp brightnessctl playerctl pavucontrol pipewire pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-firmware sof-firmware networkmanager network-manager-applet iw wireless-regdb linux-firmware bluez bluez-utils blueman upower dolphin firefox code ttf-jetbrains-mono-nerd inter-font onboard spotify-launcher wdisplays
+sudo pacman -S --needed hyprland waybar kitty hyprpaper hyprlock rofi-wayland dunst wl-clipboard grim slurp brightnessctl playerctl pavucontrol pipewire pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-firmware sof-firmware networkmanager network-manager-applet iw wireless-regdb linux-firmware bluez bluez-utils blueman upower dolphin firefox code ttf-jetbrains-mono-nerd inter-font onboard spotify-launcher wdisplays btop git base-devel flatpak gnome-software vlc libreoffice-fresh keepassxc thunderbird gparted gnome-disk-utility wireshark-qt nmap remmina steam mangohud lutris prism-launcher docker docker-compose
 ```
 
 **Audio (Arch):** gebruik **PipeWire** met `pipewire-pulse` (PulseAudio-compatibiliteit voor Waybar `pulseaudio`-module en `pavucontrol`). Het legacy `pulseaudio`-pakket is niet nodig. Voor Intel-laptops (bijv. HP EliteBook) installeert `install.sh` ook `alsa-firmware`, `sof-firmware` en `alsa-utils`. `install.sh` schakelt de officiële user-units in via `scripts/enable-audio.sh` en probeert laptop-speakers als standaard uitgang via `scripts/fix-audio.sh --auto`:
@@ -1040,12 +1075,32 @@ bash ~/.config/big-sur/scripts/open-display-settings.sh
 
 ### `scripts/settings-menu.sh`
 
-Algemeen **instellingenmenu** (Nederlandse rofi-lijst, Big Sur-thema). Waybar 󰒓 en **Super+,**. Log: `~/.cache/big-sur/settings.log`. Geen **gnome-control-center** vereist; optionele fallback naar GNOME/KDE systeeminstellingen als rofi ontbreekt. *Beeldscherm:* via `open-display-settings.sh` (wdisplays → nwg-displays → hyprsettings → terminal).
+Algemeen **instellingenmenu** (Nederlandse rofi-lijst, Big Sur-thema). Waybar 󰒓 en **Super+,**. Log: `~/.cache/big-sur/settings.log`. Geen **gnome-control-center** vereist; optionele fallback naar GNOME/KDE systeeminstellingen als rofi ontbreekt. *Beeldscherm:* via `open-display-settings.sh` (wdisplays → nwg-displays → hyprsettings → terminal). *Apps:* opent `launch-apps-menu.sh` (volledige app-launcher). *App Store:* `launch-app-store.sh` → **gnome-software**.
 
 ```bash
 bash ~/.config/big-sur/scripts/settings-menu.sh
+bash ~/.config/big-sur/scripts/launch-apps-menu.sh
 bash ~/.config/big-sur/scripts/open-display-settings.sh
 ```
+
+### `scripts/launch-apps-menu.sh`
+
+**Apps-launcher** (rofi, twee niveaus). Geopend via **Super+, → Apps** of direct. Categorieën en apps:
+
+| Categorie | Apps |
+|-----------|------|
+| Dagelijks | Firefox, Kitty, Dolphin, VS Code |
+| Media & kantoor | VLC, LibreOffice, KeePassXC, Thunderbird |
+| Winkel | App Store (gnome-software), Flatpak-lijst (kitty) |
+| Systeem | GParted, GNOME Disks, btop (kitty) |
+| Netwerk | Wireshark, nmap (kitty), Remmina |
+| Gaming | Steam, Lutris, Prism Launcher |
+
+Log: `~/.cache/big-sur/apps-menu.log`. GUI-tools (GParted, GNOME Disks, KeePassXC, GNOME Software) drijven via `hypr/windowrules.conf`.
+
+### `scripts/launch-app-store.sh`
+
+Start **GNOME Software** (`gnome-software`, Arch extra). Geopend via **Super+, → App Store**, **Apps → Winkel → App Store**, of direct. Log: `~/.cache/big-sur/app-store.log`. Zweeft via `hypr/windowrules.conf` (`org.gnome.Software`).
 
 ### `scripts/start-hyprland.sh`
 

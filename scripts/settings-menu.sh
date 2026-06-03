@@ -59,6 +59,12 @@ run_choice() {
     Toetsenbord)
       exec bash "$SCRIPT_DIR/toggle-osk.sh" "$@"
       ;;
+    Apps)
+      exec bash "$SCRIPT_DIR/launch-apps-menu.sh" "$@"
+      ;;
+    "App Store")
+      exec bash "$SCRIPT_DIR/launch-app-store.sh" "$@"
+      ;;
     Vergrendelen)
       if cmd=$(resolve_cmd hyprlock); then
         log "open $cmd"
@@ -95,6 +101,8 @@ show_rofi_menu() {
       Bluetooth \
       Beeldscherm \
       Toetsenbord \
+      Apps \
+      "App Store" \
       Vergrendelen \
       "Herstart sessie" | rofi "${rofi_args[@]}"
   )"

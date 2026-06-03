@@ -648,6 +648,26 @@ ARCH_PACKAGES=(
   onboard
   spotify-launcher
   wdisplays
+  btop
+  git
+  base-devel
+  flatpak
+  gnome-software
+  vlc
+  libreoffice-fresh
+  keepassxc
+  thunderbird
+  gparted
+  gnome-disk-utility
+  wireshark-qt
+  nmap
+  remmina
+  steam
+  mangohud
+  lutris
+  prism-launcher
+  docker
+  docker-compose
 )
 
 resolve_config_dir
@@ -770,6 +790,7 @@ echo "  $CONFIG_DIR/big-sur/scripts/enable-bluetooth.sh"
 echo ""
 echo "Instellingenmenu (rofi; geen gnome-control-center vereist):"
 echo "  Super+, of Waybar 󰒓 → $CONFIG_DIR/big-sur/scripts/settings-menu.sh"
+echo "  Apps-submenu: Super+, → Apps, of $CONFIG_DIR/big-sur/scripts/launch-apps-menu.sh"
 echo "  Beeldscherm: wdisplays (pacman extra) — $CONFIG_DIR/big-sur/scripts/open-display-settings.sh"
 echo ""
 echo "Vouw-laptop (schermtoetsenbord):"
