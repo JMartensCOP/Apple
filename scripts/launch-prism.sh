@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Start Prism Launcher (Arch: prism-launcher). Apps-menu.
+# Start Prism Launcher (Arch: prismlauncher, binary prismlauncher). Apps-menu.
 set -uo pipefail
 
 LOG_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/big-sur"
@@ -17,8 +17,14 @@ notify_msg() {
 
 find_launcher() {
   local candidate path
-  for candidate in prism-launcher prismlauncher; do
+  for candidate in prismlauncher prism-launcher PrismLauncher; do
     if path="$(command -v "$candidate" 2>/dev/null)" && [ -n "$path" ]; then
+      echo "$path"
+      return 0
+    fi
+  done
+  for path in /usr/bin/prismlauncher /usr/bin/prism-launcher; do
+    if [ -x "$path" ]; then
       echo "$path"
       return 0
     fi
@@ -28,7 +34,7 @@ find_launcher() {
 
 launcher="$(find_launcher || true)"
 if [ -z "$launcher" ]; then
-  msg="Prism Launcher niet gevonden — installeer: sudo pacman -S --needed prism-launcher"
+  msg="Prism Launcher niet gevonden — installeer: sudo pacman -S --needed prismlauncher"
   notify_msg "$msg"
   echo "$msg" >&2
   exit 1

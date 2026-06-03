@@ -665,7 +665,7 @@ ARCH_PACKAGES=(
   steam
   mangohud
   lutris
-  prism-launcher
+  prismlauncher
   docker
   docker-compose
 )

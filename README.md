@@ -517,7 +517,7 @@ remmina
 steam
 mangohud
 lutris
-prism-launcher
+prismlauncher
 docker
 docker-compose
 ```
@@ -562,7 +562,7 @@ yay -S balena-etcher
 
 `launch-etcher.sh` zoekt: `balena-etcher`, `etcher`, `/opt/balena-etcher/etcher`, AppImages in `~/Applications` en `~/Downloads`, of Flatpak `io.balena.etcher`.
 
-**Gebruikersapps (Arch extra/community):** `install.sh` installeert via `ARCH_PACKAGES` onder meer: **btop**, **git**, **base-devel**, **flatpak**, **gnome-software** (App Store), **vlc**, **libreoffice-fresh**, **keepassxc**, **thunderbird**, **gparted**, **gnome-disk-utility** (binary `gnome-disks`), **wireshark-qt**, **nmap**, **remmina**, **steam**, **mangohud**, **lutris**, **prism-launcher**, **docker**, **docker-compose**. **mangohud** is een game-overlay (geen menu-launcher). **git** wordt wel geïnstalleerd maar heeft geen Apps-menu-item. **Docker:** CLI via Apps-menu; activeer de daemon met `sudo systemctl enable --now docker` en voeg je user toe aan groep `docker`. Terminal-tools (**btop**, **nmap**, **Flatpak-lijst**, **Docker-status**) openen in **kitty**. Gaming: **Steam**, **Lutris** en **Prism Launcher** via `launch-steam.sh`, `launch-lutris.sh`, `launch-prism.sh`.
+**Gebruikersapps (Arch extra/community):** `install.sh` installeert via `ARCH_PACKAGES` onder meer: **btop**, **git**, **base-devel**, **flatpak**, **gnome-software** (App Store), **vlc**, **libreoffice-fresh**, **keepassxc**, **thunderbird**, **gparted**, **gnome-disk-utility** (binary `gnome-disks`), **wireshark-qt**, **nmap**, **remmina**, **steam**, **mangohud**, **lutris**, **prismlauncher**, **docker**, **docker-compose**. **mangohud** is een game-overlay (geen menu-launcher). **git** wordt wel geïnstalleerd maar heeft geen Apps-menu-item. **Docker:** CLI via Apps-menu; activeer de daemon met `sudo systemctl enable --now docker` en voeg je user toe aan groep `docker`. Terminal-tools (**btop**, **nmap**, **Flatpak-lijst**, **Docker-status**) openen in **kitty**. Gaming: **Steam**, **Lutris** en **Prism Launcher** via `launch-steam.sh`, `launch-lutris.sh`, `launch-prism.sh`.
 
 **App Store:** **gnome-software** uit Arch **extra** ([pakket](https://archlinux.org/packages/extra/x86_64/gnome-software/)). Start via **Super+, → App Store**, **Super+, → Apps → Winkel → App Store**, of `launch-app-store.sh`. Met **flatpak** geïnstalleerd toont GNOME Software doorgaans Flatpak-apps; voor repo-pakketten via PackageKit is optioneel `gnome-software-packagekit-plugin` (niet standaard in dit thema — pacman blijft de aanbevolen weg voor systeempakketten).
 
@@ -571,7 +571,7 @@ yay -S balena-etcher
 Voor Arch (officiële repos):
 
 ```bash
-sudo pacman -S --needed hyprland waybar kitty hyprpaper hyprlock rofi-wayland dunst wl-clipboard grim slurp brightnessctl playerctl pavucontrol pipewire pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-firmware sof-firmware networkmanager network-manager-applet iw wireless-regdb linux-firmware bluez bluez-utils blueman upower dolphin firefox code ttf-jetbrains-mono-nerd inter-font onboard spotify-launcher wdisplays btop git base-devel flatpak gnome-software vlc libreoffice-fresh keepassxc thunderbird gparted gnome-disk-utility wireshark-qt nmap remmina steam mangohud lutris prism-launcher docker docker-compose
+sudo pacman -S --needed hyprland waybar kitty hyprpaper hyprlock rofi-wayland dunst wl-clipboard grim slurp brightnessctl playerctl pavucontrol pipewire pipewire-pulse pipewire-alsa wireplumber alsa-utils alsa-firmware sof-firmware networkmanager network-manager-applet iw wireless-regdb linux-firmware bluez bluez-utils blueman upower dolphin firefox code ttf-jetbrains-mono-nerd inter-font onboard spotify-launcher wdisplays btop git base-devel flatpak gnome-software vlc libreoffice-fresh keepassxc thunderbird gparted gnome-disk-utility wireshark-qt nmap remmina steam mangohud lutris prismlauncher docker docker-compose
 ```
 
 **Audio (Arch):** gebruik **PipeWire** met `pipewire-pulse` (PulseAudio-compatibiliteit voor Waybar `pulseaudio`-module en `pavucontrol`). Het legacy `pulseaudio`-pakket is niet nodig. Voor Intel-laptops (bijv. HP EliteBook) installeert `install.sh` ook `alsa-firmware`, `sof-firmware` en `alsa-utils`. `install.sh` schakelt de officiële user-units in via `scripts/enable-audio.sh` en probeert laptop-speakers als standaard uitgang via `scripts/fix-audio.sh --auto`:
@@ -1455,6 +1455,24 @@ chmod +x ~/Applications/balena-etcher-*.AppImage
 | Start mislukt na install | `tail ~/.cache/big-sur/etcher.log` — AppImage soms `--no-sandbox` nodig (script doet dit) |
 
 **Waybar:** dock-icoon 󰋊 → `launch-etcher.sh`. **Keybind:** Super+Shift+H.
+
+### Prism Launcher start niet (Apps-menu → Gaming)
+
+**Symptoom:** Apps-menu → *Gaming* → **Prism Launcher** — notify “Prism Launcher niet gevonden”, of `error: target not found: prism-launcher` tijdens `./install.sh`.
+
+**Oorzaak:** Arch **extra** heet het pakket **`prismlauncher`** (binary `prismlauncher`), niet `prism-launcher`.
+
+```bash
+sudo pacman -S --needed prismlauncher   # Arch extra (install.sh ARCH_PACKAGES)
+```
+
+| Probleem | Oplossing |
+|----------|-----------|
+| `prism-launcher: command not found` / `prismlauncher: command not found` | `sudo pacman -S --needed prismlauncher` of `./install.sh` op Linux |
+| `error: target not found: prism-launcher` | Verkeerde pakketnaam — gebruik **`prismlauncher`** |
+| Geen notify bij klik | Update Apps-menu naar `launch-prism.sh`; log: `tail ~/.cache/big-sur/prism.log` |
+
+**Apps-menu:** *Gaming* → **Prism Launcher** → `launch-prism.sh`.
 
 ### Configs Verschijnen Niet In Je Hyprland-sessie
 
